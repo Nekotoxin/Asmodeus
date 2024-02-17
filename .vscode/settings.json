@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "bpf_tracing.h": "c",
+        "bpf_endian.h": "c",
+        "bpf_helpers.h": "c",
+        "vmlinux.h": "c",
+        "socket.h": "c"
+    }
+}

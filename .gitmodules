@@ -1,0 +1,9 @@
+[submodule "deps/blazesym"]
+	path = deps/blazesym
+	url = https://github.com/libbpf/blazesym
+[submodule "deps/libbpf"]
+	path = deps/libbpf
+	url = https://github.com/libbpf/libbpf.git
+[submodule "deps/bpftool"]
+	path = deps/bpftool
+	url = https://github.com/libbpf/bpftool

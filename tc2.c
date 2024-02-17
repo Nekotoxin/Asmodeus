@@ -30,7 +30,7 @@ int handle_event(void *ctx, void *data, size_t len)
     printf("Packet Transmit: %s:%u -> ", inet_ntoa(*(struct in_addr *)&e->ip_info.saddr), ntohs(e->tcp_info.source));
     printf("%s:%u\n\n", inet_ntoa(*(struct in_addr *)&e->ip_info.daddr), ntohs(e->tcp_info.dest));
 
-    printf("Timestamp: %llu\n\n", e->timestamp_ns);
+    printf("Timestamp: %llu\n", e->timestamp_ns);
 
     // Print IP header
     printf("IP Header:\n");
