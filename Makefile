@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
 OUTPUT := .output
-CLANG ?= clang
+CLANG ?= clang++
 LIBBPF_SRC := $(abspath deps/libbpf/src)
 BPFTOOL_SRC := $(abspath deps/bpftool/src)
 LIBBPF_OBJ := $(abspath $(OUTPUT)/libbpf.a)
@@ -121,6 +121,10 @@ $(OUTPUT)/%.skel.h: $(OUTPUT)/%.bpf.o | $(OUTPUT) $(BPFTOOL)
 # Build user-space code
 $(patsubst %,$(OUTPUT)/%.o,$(APPS)): %.o: %.skel.h
 
+$(OUTPUT)/%.o: %.cc $(wildcard %.h) | $(OUTPUT)
+	$(call msg,CXX,$@)
+	$(Q)$(CXX) $(CFLAGS) $(INCLUDES) -c $(filter %.cc,$^) -o $@
+
 $(OUTPUT)/%.o: %.c $(wildcard %.h) | $(OUTPUT)
 	$(call msg,CC,$@)
 	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $(filter %.c,$^) -o $@
@@ -132,7 +136,7 @@ $(BZS_APPS): $(LIBBLAZESYM_OBJ)
 # Build application binary
 $(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ)  | $(OUTPUT)
 	$(call msg,BINARY,$@)
-	$(Q)$(CC) $(CFLAGS) $^ $(ALL_LDFLAGS) -lelf -lz -o $@
+	$(Q)$(CXX) $(CFLAGS) $^ $(ALL_LDFLAGS) -lelf -lz -lstdc++ -o $@
 
 # delete failed targets
 .DELETE_ON_ERROR:

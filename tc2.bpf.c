@@ -1,16 +1,14 @@
-// SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
-/* Copyright (c) 2022 Hengqi Chen */
-#include <stddef.h>
 #include <linux/bpf.h>
 #include <linux/if_ether.h>
-#include <linux/socket.h>
 #include <bpf/bpf_endian.h>
 #include <bpf/bpf_helpers.h>
-#include <bpf/bpf_tracing.h>
 #include "tc2.h"
 
 #define TC_ACT_OK 0
 #define ETH_P_IP 0x0800 /* Internet Protocol packet	*/
+
+#define INGRESS 1
+#define EGRESS -1
 
 struct
 {
@@ -18,9 +16,7 @@ struct
 	__uint(max_entries, 256 * 1024);
 } my_map SEC(".maps");
 
-char LICENSE[] SEC("license") = "Dual BSD/GPL";
-
-static int packet_stat(struct __sk_buff *ctx){
+static int packet_stat(struct __sk_buff *ctx, int direction){
     struct event *e;
 
     void *data_end = (void *)(__u64)ctx->data_end;
@@ -56,6 +52,8 @@ static int packet_stat(struct __sk_buff *ctx){
     e->timestamp_ns = bpf_ktime_get_ns();
     __builtin_memcpy(&e->ip_info, ip_header, sizeof(struct iphdr));
     __builtin_memcpy(&e->tcp_info, tcp_header, sizeof(struct tcphdr));
+    if(direction==INGRESS) sprintf(e->prompt,"Traffic Control Subsystem: Ingress");
+    else sprintf(e->prompt,"Traffic Control Subsystem: Egress");
 
     // Submit the event to the ring buffer
     bpf_ringbuf_submit(e, 0);
@@ -65,14 +63,12 @@ static int packet_stat(struct __sk_buff *ctx){
 
 SEC("tc/ingress")
 int tc_ingress(struct __sk_buff *ctx) {
-    return packet_stat(ctx);
+    return packet_stat(ctx, INGRESS);
 }
 
 SEC("tc/egress")
 int tc_egress(struct __sk_buff *ctx) {
-    return packet_stat(ctx);
+    return packet_stat(ctx, EGRESS);
 }
 
 
-
-char _license[] SEC("license") = "GPL";

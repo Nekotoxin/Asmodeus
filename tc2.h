@@ -10,6 +10,7 @@ struct event
     __u64 timestamp_ns; //  = bpf_ktime_get_ns()
     struct iphdr ip_info;
     struct tcphdr tcp_info;
+    char prompt[128];
 };
 
 #endif
