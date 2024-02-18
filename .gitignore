@@ -68,3 +68,5 @@ ecli-server
 ecc
 ecli
 tc2 
+
+*.log
