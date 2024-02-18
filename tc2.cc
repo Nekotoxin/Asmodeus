@@ -130,11 +130,7 @@ int handle_event(void *ctx, void *data, size_t len)
         add_or_update_conn_stat(key, ntohs(e->ip_info.tot_len), direction);
     }
 
-    if(e->tcp_info.fin&&!e->tcp_info.ack){
-        printf("FIN\n");
-    }
-
-    if (e->tcp_info.fin) {
+    if (e->tcp_info.fin&&e->tcp_info.ack) {
         conn_fin_set.insert(key);
     }
 
