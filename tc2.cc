@@ -3,7 +3,6 @@
 #include <signal.h>
 #include <stdio.h>
 #include "tc2.h"
-#include "uthash.h"
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include "tc2.skel.h"
@@ -56,11 +55,12 @@ struct connection_key_equal {
     }
 };
 
-std::unordered_map<conn_key, conn_info, connection_key_hash, connection_key_equal> conn_map;
-std::unordered_map<conn_key, int, connection_key_hash, connection_key_equal> conn_fin_map;
-std::unordered_map<conn_key, int, connection_key_hash, connection_key_equal> conn_syn_map;
+std::unordered_map<conn_key, conn_info, connection_key_hash, connection_key_equal> conn_stat_map;
+std::unordered_set<conn_key, connection_key_hash, connection_key_equal> conn_fin_set;
+std::unordered_set<conn_key, connection_key_hash, connection_key_equal> conn_syn_set;
+std::unordered_set<conn_key, connection_key_hash, connection_key_equal> conn_establish_set;
 std::unordered_set<conn_key, connection_key_hash, connection_key_equal> conn_key_to_remove_set; // remove on every 1 second
-pthread_mutex_t conn_map_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t conn_stat_map_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t conn_key_to_remove_set_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -69,9 +69,9 @@ pthread_mutex_t conn_key_to_remove_set_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 void delete_conn(const conn_key& key) {
-    pthread_mutex_lock(&conn_map_mutex);
-    conn_map.erase(key);
-    pthread_mutex_unlock(&conn_map_mutex);
+    pthread_mutex_lock(&conn_stat_map_mutex);
+    conn_stat_map.erase(key);
+    pthread_mutex_unlock(&conn_stat_map_mutex);
 }
 
 void handle_sigint(int sig)
@@ -81,24 +81,32 @@ void handle_sigint(int sig)
 }
 
 // 添加或更新连接信息
-void add_or_update_connection(const conn_key& key, int bytes, int direction) {
+void add_or_update_conn_stat(const conn_key& key, int bytes, int direction) {
 
     // 获取互斥锁
-    pthread_mutex_lock(&conn_map_mutex);
+    pthread_mutex_lock(&conn_stat_map_mutex);
     // 根据数据包的流向更新流量信息
     if (direction == FORWARD) {
-        conn_map[key].fwd_bytes += bytes;
+        conn_stat_map[key].fwd_bytes += bytes;
     } else if (direction == BACKWARD) {
-        conn_map[key].bwd_bytes += bytes;
+        conn_stat_map[key].bwd_bytes += bytes;
     }
     // 释放互斥锁
-    pthread_mutex_unlock(&conn_map_mutex);
+    pthread_mutex_unlock(&conn_stat_map_mutex);
 }
 
 
 conn_key make_key(sock_addr addr1, sock_addr addr2){
     if((addr1.ip!=interface_ip)||(addr1.ip==addr2.ip&&addr1.port>addr2.port)) std::swap(addr1,addr2);
     return {addr1,addr2};
+}
+
+void print_key(conn_key key){
+    char ip1_str[INET_ADDRSTRLEN];
+    char ip2_str[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(key.addr1.ip), ip1_str, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(key.addr2.ip), ip2_str, INET_ADDRSTRLEN);
+    printf("%s:%u - %s:%u\n", ip1_str, key.addr1.port, ip2_str, key.addr2.port);
 }
 
 // fix it: not establish的时候，流量没有统计
@@ -111,16 +119,27 @@ int handle_event(void *ctx, void *data, size_t len)
     int direction = e->ip_info.daddr == interface_ip? FORWARD : BACKWARD;
 
     // 添加或更新连接信息
-    if(e->tcp_info.syn&&e->tcp_info.ack) conn_syn_map[key]=1; // 确认连接后，才进行统计 但是这样没法搞ddos，再考虑考虑
-    if(conn_syn_map.find(key)!=conn_syn_map.end()&&!e->tcp_info.syn&&e->tcp_info.ack) add_or_update_connection(key, ntohs(e->ip_info.tot_len), direction);    
+    if(e->tcp_info.syn&&e->tcp_info.ack) {
+        conn_syn_set.insert(key); // 确认连接后，才进行统计 但是这样没法搞ddos，再考虑考虑
+    }
+    if(conn_syn_set.find(key)!=conn_syn_set.end()&&!e->tcp_info.syn&&e->tcp_info.ack) {
+        conn_syn_set.erase(key);    
+        conn_establish_set.insert(key);
+    }
+    if(conn_establish_set.find(key)!=conn_establish_set.end()&&e->tcp_info.ack){
+        add_or_update_conn_stat(key, ntohs(e->ip_info.tot_len), direction);
+    }
 
+    if(e->tcp_info.fin&&!e->tcp_info.ack){
+        printf("FIN\n");
+    }
 
-    // 为什么conn_count在不断增多，和系统中的tcp连接数不匹配？因为累积了NOT_ESTABLISH的，当然FIN也就无从谈起，不会执行delete_conn
-    // 四次挥手 倒数第二次
-    if (e->tcp_info.fin&&e->tcp_info.ack) conn_fin_map[key]=1;
+    if (e->tcp_info.fin) {
+        conn_fin_set.insert(key);
+    }
 
-    if(conn_fin_map.find(key)!=conn_fin_map.end()&&!e->tcp_info.fin&&e->tcp_info.ack){// 四次挥手最后一次  
-        conn_fin_map.erase(key);
+    if(conn_fin_set.find(key)!=conn_fin_set.end()&&!e->tcp_info.fin&&e->tcp_info.ack){// 四次挥手最后一次  
+        conn_fin_set.erase(key);
         pthread_mutex_lock(&conn_key_to_remove_set_mutex);
         conn_key_to_remove_set.insert(key);
         pthread_mutex_unlock(&conn_key_to_remove_set_mutex);
@@ -136,10 +155,10 @@ void *timer_handler1(void *arg) {
     while (1) {
         sleep(1);
         //在这里执行您的任务
-        printf("------------------------------------------------------------------------------------------\n");
+        printf("------------------------------------------- %ds -----------------------------------------------\n",++time_count);
         int conn_count=0;
-        pthread_mutex_lock(&conn_map_mutex);
-        for (auto it = conn_map.begin(); it != conn_map.end(); ++it) {
+        pthread_mutex_lock(&conn_stat_map_mutex);
+        for (auto it = conn_stat_map.begin(); it != conn_stat_map.end(); ++it) {
             conn_count++;
             auto key=it->first;
             auto& info=it->second; //引用
@@ -147,16 +166,18 @@ void *timer_handler1(void *arg) {
             char ip2_str[INET_ADDRSTRLEN];
             inet_ntop(AF_INET, &(key.addr1.ip), ip1_str, INET_ADDRSTRLEN);
             inet_ntop(AF_INET, &(key.addr2.ip), ip2_str, INET_ADDRSTRLEN);
-            printf("At %d sec, %s:%u - %s:%u, Forward Bytes(接收字节速度): %llu KB/s, Backward Bytes(发送字节速度): %llu KB/s\n",
-                    ++time_count, ip1_str, key.addr1.port, ip2_str, key.addr2.port,
+            printf("%s:%u - %s:%u, Forward Bytes(接收字节速度): %llu KB/s, Backward Bytes(发送字节速度): %llu KB/s\n",
+                    ip1_str, key.addr1.port, ip2_str, key.addr2.port,
                     info.fwd_bytes, info.bwd_bytes);
             info.fwd_bytes = 0; // 清空累积的正向字节数
             info.bwd_bytes = 0; // 清空累积的反向字节数
         }
-        pthread_mutex_unlock(&conn_map_mutex);
+        pthread_mutex_unlock(&conn_stat_map_mutex);
 
         pthread_mutex_lock(&conn_key_to_remove_set_mutex);
         for(auto key:conn_key_to_remove_set){
+            printf("DELETE:");print_key(key);
+            conn_establish_set.erase(key); // fix 线程不安全
             delete_conn(key);
         }
         conn_key_to_remove_set.clear();
