@@ -16,31 +16,21 @@ struct
 	__uint(max_entries, 256 * 1024);
 } my_map SEC(".maps");
 
-static int packet_stat(struct __sk_buff *ctx, int direction){
+static int packet_stat(struct __sk_buff *ctx, int direction) {
     struct event *e;
 
     void *data_end = (void *)(__u64)ctx->data_end;
     void *data = (void *)(__u64)ctx->data;
-    struct ethhdr *eth_header;
+    struct ethhdr *eth_header = data;
     struct iphdr *ip_header;
     struct tcphdr *tcp_header;
+    struct udphdr *udp_header;
 
-    if (ctx->protocol != bpf_htons(ETH_P_IP))
-        return TC_ACT_OK;
-
-    eth_header = data;
-    if ((void *)(eth_header + 1) > data_end)
+    if (ctx->protocol != bpf_htons(ETH_P_IP) || (void *)(eth_header + 1) > data_end)
         return TC_ACT_OK;
 
     ip_header = (struct iphdr *)(eth_header + 1);
     if ((void *)(ip_header + 1) > data_end)
-        return TC_ACT_OK;
-
-    if (ip_header->protocol != IPPROTO_TCP)
-        return TC_ACT_OK;
-
-    tcp_header = (struct tcphdr *)(ip_header + 1);
-    if ((void *)(tcp_header + 1) > data_end)
         return TC_ACT_OK;
 
     // Reserve space for event in BPF ring buffer
@@ -51,13 +41,29 @@ static int packet_stat(struct __sk_buff *ctx, int direction){
     // Fill the event structure
     e->timestamp_ns = bpf_ktime_get_ns();
     __builtin_memcpy(&e->ip_info, ip_header, sizeof(struct iphdr));
-    __builtin_memcpy(&e->tcp_info, tcp_header, sizeof(struct tcphdr));
-    if(direction==INGRESS) sprintf(e->prompt,"Traffic Control Subsystem: Ingress");
-    else sprintf(e->prompt,"Traffic Control Subsystem: Egress");
 
-    // Submit the event to the ring buffer
+    if (ip_header->protocol == IPPROTO_TCP) {
+        tcp_header = (struct tcphdr *)(ip_header + 1);
+        if ((void *)(tcp_header + 1) > data_end) {
+            bpf_ringbuf_discard(e, 0);
+            return TC_ACT_OK;
+        }
+        e->protocol = 6;
+        __builtin_memcpy(&e->transport_info.tcp_info, tcp_header, sizeof(struct tcphdr));
+    } else if (ip_header->protocol == IPPROTO_UDP) {
+        udp_header = (struct udphdr *)(ip_header + 1);
+        if ((void *)(udp_header + 1) > data_end) {
+            bpf_ringbuf_discard(e, 0);
+            return TC_ACT_OK;
+        }
+        e->protocol = 17;
+        __builtin_memcpy(&e->transport_info.udp_info, udp_header, sizeof(struct udphdr));
+    } else {
+        bpf_ringbuf_discard(e, 0);
+        return TC_ACT_OK;
+    }
     bpf_ringbuf_submit(e, 0);
-    
+
     return TC_ACT_OK;
 }
 

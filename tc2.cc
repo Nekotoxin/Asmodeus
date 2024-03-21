@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <net/if.h>
+// #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
 #include "tc2.h"
@@ -14,183 +15,72 @@
 #include <unordered_set>
 #include <iostream>
 
+#include "FlowGenerator.h"
+FlowGenerator flow_mgr(true, 120000000L, 5000000L);
+IdGenerator packet_id_generator;
+
 __u32 interface_ip;
 
-typedef struct {
-    __u32 ip;
-    __u16 port;
-} sock_addr;
-
-typedef struct {
-    sock_addr addr1;
-    sock_addr addr2;
-} conn_key;
-
-typedef struct {
-    unsigned long long int fwd_bytes;
-    unsigned long long int bwd_bytes;
-}conn_info;
-
 unsigned int get_interface_ip(char* if_name);
+void handle_sigint(int sig);
 
-// ip1:port1 -> ip2:port2 = ip2:port2 -> ip1:port1
-
-// 哈希函数的自定义实现
-struct connection_key_hash {
-    std::size_t operator()(const conn_key& key) const {
-        return std::hash<unsigned int>()(key.addr1.ip) ^
-               std::hash<unsigned int>()(key.addr2.ip) ^
-               std::hash<unsigned short>()(key.addr1.port) ^
-               std::hash<unsigned short>()(key.addr2.port);
-    }
-};
-
-// 相等比较函数的自定义实现
-struct connection_key_equal {
-    bool operator()(const conn_key& lhs, const conn_key& rhs) const {
-        return lhs.addr1.ip==rhs.addr1.ip &&
-               lhs.addr1.port==rhs.addr1.port &&
-               lhs.addr2.ip==rhs.addr2.ip &&
-               lhs.addr2.port==rhs.addr2.port;
-    }
-};
-
-std::unordered_map<conn_key, conn_info, connection_key_hash, connection_key_equal> conn_stat_map;
-std::unordered_set<conn_key, connection_key_hash, connection_key_equal> conn_fin_set;
-std::unordered_set<conn_key, connection_key_hash, connection_key_equal> conn_syn_set;
-std::unordered_set<conn_key, connection_key_hash, connection_key_equal> conn_establish_set;
-std::unordered_set<conn_key, connection_key_hash, connection_key_equal> conn_key_to_remove_set; // remove on every 1 second
-pthread_mutex_t conn_stat_map_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t conn_key_to_remove_set_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-
-#define FORWARD 0 
-#define BACKWARD 1
-
-
-void delete_conn(const conn_key& key) {
-    pthread_mutex_lock(&conn_stat_map_mutex);
-    conn_stat_map.erase(key);
-    pthread_mutex_unlock(&conn_stat_map_mutex);
-}
-
-void handle_sigint(int sig)
-{
-    printf("Terminating\n");
-    exit(0);
-}
-
-// 添加或更新连接信息
-void add_or_update_conn_stat(const conn_key& key, int bytes, int direction) {
-
-    // 获取互斥锁
-    pthread_mutex_lock(&conn_stat_map_mutex);
-    // 根据数据包的流向更新流量信息
-    if (direction == FORWARD) {
-        conn_stat_map[key].fwd_bytes += bytes;
-    } else if (direction == BACKWARD) {
-        conn_stat_map[key].bwd_bytes += bytes;
-    }
-    // 释放互斥锁
-    pthread_mutex_unlock(&conn_stat_map_mutex);
-}
-
-
-conn_key make_key(sock_addr addr1, sock_addr addr2){
-    if((addr1.ip!=interface_ip)||(addr1.ip==addr2.ip&&addr1.port>addr2.port)) std::swap(addr1,addr2);
-    return {addr1,addr2};
-}
-
-void print_key(conn_key key){
-    char ip1_str[INET_ADDRSTRLEN];
-    char ip2_str[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(key.addr1.ip), ip1_str, INET_ADDRSTRLEN);
-    inet_ntop(AF_INET, &(key.addr2.ip), ip2_str, INET_ADDRSTRLEN);
-    printf("%s:%u - %s:%u\n", ip1_str, key.addr1.port, ip2_str, key.addr2.port);
-}
-
-// fix it: not establish的时候，流量没有统计
 int handle_event(void *ctx, void *data, size_t len)
 {
+    if (len < sizeof(struct event)) {
+        // 数据长度不足，无法处理
+        return 0;
+    }
+
     struct event *e = (struct event *)data;
-
-    auto key=make_key({e->ip_info.saddr,ntohs(e->tcp_info.source)},{e->ip_info.daddr,ntohs(e->tcp_info.dest)});
-    // ingress->forward, 即dst=interface时是
-    int direction = e->ip_info.daddr == interface_ip? FORWARD : BACKWARD;
-
-    // 添加或更新连接信息
-    if(e->tcp_info.syn&&e->tcp_info.ack) {
-        conn_syn_set.insert(key); // 确认连接后，才进行统计 但是这样没法搞ddos，再考虑考虑
-    }
-    if(conn_syn_set.find(key)!=conn_syn_set.end()&&!e->tcp_info.syn&&e->tcp_info.ack) {
-        conn_syn_set.erase(key);    
-        conn_establish_set.insert(key);
-    }
-    if(conn_establish_set.find(key)!=conn_establish_set.end()&&e->tcp_info.ack){
-        add_or_update_conn_stat(key, ntohs(e->ip_info.tot_len), direction);
-    }
-
-    if (e->tcp_info.fin&&e->tcp_info.ack) {
-        conn_fin_set.insert(key);
-    }
-
-    if(conn_fin_set.find(key)!=conn_fin_set.end()&&!e->tcp_info.fin&&e->tcp_info.ack){// 四次挥手最后一次  
-        conn_fin_set.erase(key);
-        pthread_mutex_lock(&conn_key_to_remove_set_mutex);
-        conn_key_to_remove_set.insert(key);
-        pthread_mutex_unlock(&conn_key_to_remove_set_mutex);
-    }
     
+    // 提取源 IP 和目标 IP 地址
+    std::vector<uint8_t> src_ip(4), dst_ip(4);
+    for (int i = 0; i < 4; ++i) {
+        src_ip[i] = (e->ip_info.saddr >> (i * 8)) & 0xFF;
+        dst_ip[i] = (e->ip_info.daddr >> (i * 8)) & 0xFF;
+    }
+
+    int src_port=0, dst_port=0;
+    // 获取 IP 头部总长度
+    unsigned int ip_total_length = ntohs(e->ip_info.tot_len);
+
+    // 提取端口和协议
+    if (e->protocol == 6) { // TCP
+        src_port = ntohs(e->transport_info.tcp_info.source);
+        dst_port = ntohs(e->transport_info.tcp_info.dest);
+        BasicPacketInfo pkt(src_ip, dst_ip, src_port, dst_port, e->protocol, e->timestamp_ns / 1000000, packet_id_generator);
+        pkt.setTCPWindow(ntohs(e->transport_info.tcp_info.window));
+        pkt.setFlagFIN(e->transport_info.tcp_info.fin);
+        pkt.setFlagSYN(e->transport_info.tcp_info.syn);
+        pkt.setFlagRST(e->transport_info.tcp_info.rst);
+        pkt.setFlagPSH(e->transport_info.tcp_info.psh);
+        pkt.setFlagACK(e->transport_info.tcp_info.ack);
+        pkt.setFlagURG(e->transport_info.tcp_info.urg);
+        pkt.setFlagECE(e->transport_info.tcp_info.ece);
+        pkt.setFlagCWR(e->transport_info.tcp_info.cwr);
+        unsigned int tcp_header_length = e->transport_info.tcp_info.doff * 4;  // TCP 头部长度
+        unsigned int tcp_payload_length = ip_total_length - sizeof(struct iphdr) - tcp_header_length;
+        pkt.setPayloadBytes(tcp_payload_length); 
+        pkt.setHeaderBytes(tcp_header_length);
+        flow_mgr.addPacket(pkt);
+    } else if (e->protocol == 17) { // UDP
+        src_port = ntohs(e->transport_info.udp_info.source);
+        dst_port = ntohs(e->transport_info.udp_info.dest);
+        BasicPacketInfo pkt(src_ip, dst_ip, src_port, dst_port, e->protocol, e->timestamp_ns / 1000000, packet_id_generator);
+        unsigned int udp_payload_length = ip_total_length - sizeof(struct iphdr) - sizeof(struct udphdr);
+        pkt.setPayloadBytes(udp_payload_length);
+        pkt.setHeaderBytes(sizeof(struct udphdr));
+        flow_mgr.addPacket(pkt);
+    } else {
+        // 非 TCP/UDP 协议，暂不处理
+        return 0;
+    }
+
     return 0;
 }
 
-
-
-void *timer_handler1(void *arg) {
-    static int time_count=0;
-    while (1) {
-        sleep(1);
-        //在这里执行您的任务
-        printf("------------------------------------------- %ds -----------------------------------------------\n",++time_count);
-        int conn_count=0;
-        pthread_mutex_lock(&conn_stat_map_mutex);
-        for (auto it = conn_stat_map.begin(); it != conn_stat_map.end(); ++it) {
-            conn_count++;
-            auto key=it->first;
-            auto& info=it->second; //引用
-            char ip1_str[INET_ADDRSTRLEN];
-            char ip2_str[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &(key.addr1.ip), ip1_str, INET_ADDRSTRLEN);
-            inet_ntop(AF_INET, &(key.addr2.ip), ip2_str, INET_ADDRSTRLEN);
-            printf("%s:%u - %s:%u, Forward Bytes(接收字节速度): %llu KB/s, Backward Bytes(发送字节速度): %llu KB/s\n",
-                    ip1_str, key.addr1.port, ip2_str, key.addr2.port,
-                    info.fwd_bytes, info.bwd_bytes);
-            info.fwd_bytes = 0; // 清空累积的正向字节数
-            info.bwd_bytes = 0; // 清空累积的反向字节数
-        }
-        pthread_mutex_unlock(&conn_stat_map_mutex);
-
-        pthread_mutex_lock(&conn_key_to_remove_set_mutex);
-        for(auto key:conn_key_to_remove_set){
-            printf("DELETE:");print_key(key);
-            conn_establish_set.erase(key); // fix 线程不安全
-            delete_conn(key);
-        }
-        conn_key_to_remove_set.clear();
-        pthread_mutex_unlock(&conn_key_to_remove_set_mutex);
-        // delete_conn(key);
-        printf("connections count:%d\n",conn_count);
-    }
-    return NULL;
-}
-
-
 int main(int argc, char *argv[])
 {
-    pthread_t tid;
-    std::cout<<"hello!"<<std::endl;
-    // return 0;
-    pthread_create(&tid, NULL, timer_handler1, NULL);
     unsigned int ifindex;
 
     if (argc != 2) {
@@ -254,38 +144,12 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-
-
-void print_iphdr(struct iphdr* ip_info){
-    printf("IP Header:\n");
-    printf("  Version: %u\n", ip_info->version);
-    printf("  Header Length: %u bytes\n", ip_info->ihl * 4);
-    printf("  Total Length: %u bytes\n", ntohs(ip_info->tot_len));
-    printf("  Protocol: %u\n", ip_info->protocol);
-    printf("  Source IP: %s\n", inet_ntoa(*(struct in_addr *)&ip_info->saddr));
-    printf("  Destination IP: %s\n", inet_ntoa(*(struct in_addr *)&ip_info->daddr));
+void handle_sigint(int sig)
+{
+    printf("Terminating\n");
+    exit(0);
 }
 
-void print_tcphdr(struct tcphdr* tcp_info){
-    // Print TCP header
-    printf("TCP Header:\n");
-    printf("  Source Port: %u\n", ntohs(tcp_info->source));
-    printf("  Destination Port: %u\n", ntohs(tcp_info->dest));
-    printf("  TCP Flags: ");
-    if (tcp_info->ack) printf("ACK \n");
-    if (tcp_info->syn) printf("SYN ");
-    if (tcp_info->fin) printf("FIN x->");
-    if (tcp_info->rst) printf("RST ");
-    if (tcp_info->psh) printf("PSH ");
-    if (tcp_info->urg) printf("URG ");
-    printf("\n");
-    printf("  Sequence Number: %u\n", ntohl(tcp_info->seq));
-    printf("  Acknowledgment Number: %u\n", ntohl(tcp_info->ack_seq));
-    printf("  Data Offset: %u bytes\n", tcp_info->doff * 4);
-    printf("  Window Size: %u\n", ntohs(tcp_info->window));
-    printf("  Checksum: 0x%x\n", ntohs(tcp_info->check));
-    printf("  Urgent Pointer: %u\n", ntohs(tcp_info->urg_ptr));
-}
 
 unsigned int get_interface_ip(char* if_name) {
     int fd;
@@ -300,3 +164,4 @@ unsigned int get_interface_ip(char* if_name) {
     /* display result */
     return (((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr).s_addr;
 }
+
