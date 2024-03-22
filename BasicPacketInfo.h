@@ -47,31 +47,10 @@ public:
                     int protocol, __u64 timeStamp, IdGenerator& generator)
         : src(src), dst(dst), srcPort(srcPort), dstPort(dstPort), protocol(protocol), timeStamp(timeStamp) {
         id = generator.nextId();
-        generateFlowId();
     }
     
     BasicPacketInfo(IdGenerator& generator) {
         id = generator.nextId();
-    }
-    
-    std::string generateFlowId() {
-        bool forward = true;
-        
-        for(size_t i = 0; i < src.size(); i++) {           
-            if(src[i] != dst[i]){
-                if(src[i] > dst[i]){
-                    forward = false;
-                }
-                break;
-            }
-        }
-        
-        if(forward) {
-            flowId = ip2str(src) + "-" + ip2str(dst) + "-" + std::to_string(srcPort) + "-" + std::to_string(dstPort) + "-" + std::to_string(protocol);
-        } else {
-            flowId = ip2str(dst) + "-" + ip2str(src) + "-" + std::to_string(dstPort) + "-" + std::to_string(srcPort) + "-" + std::to_string(protocol);
-        }
-        return flowId;
     }
 
     std::string fwdFlowId() {
@@ -152,10 +131,6 @@ public:
 
     void setTimeStamp(__u64 newTimeStamp) {
         timeStamp = newTimeStamp;
-    }
-
-    std::string getFlowId() const {
-        return flowId.empty() ? const_cast<BasicPacketInfo*>(this)->generateFlowId() : flowId;
     }
 
     void setFlowId(const std::string& newFlowId) {

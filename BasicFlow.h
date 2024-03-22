@@ -16,7 +16,7 @@
 using namespace boost::accumulators;
 
 class BasicFlow {
-private:
+public:
     static const std::string separator;
     accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> fwdPktStats;
     accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> bwdPktStats;
@@ -65,6 +65,7 @@ private:
     long flowLastSeen;
     long forwardLastSeen;
     long backwardLastSeen;
+    long activityTimeout;
 
     long fbulkDuration = 0;
     long fbulkPacketCount = 0;
@@ -152,7 +153,7 @@ public:
 
 public:
     BasicFlow(){}
-    BasicFlow(bool isBidirectional, BasicPacketInfo packet, std::vector<uint8_t> flowSrc, std::vector<uint8_t> flowDst, int flowSrcPort, int flowDstPort) {
+    BasicFlow(bool isBidirectional, BasicPacketInfo packet, std::vector<uint8_t> flowSrc, std::vector<uint8_t> flowDst, int flowSrcPort, int flowDstPort, long activityTimeout) {
         initParameters();
         this->isBidirectional = isBidirectional;
         firstPacket(packet); // You need to define this function based on how you handle the first packet.
@@ -160,16 +161,19 @@ public:
         dst = std::move(flowDst);
         srcPort = flowSrcPort;
         dstPort = flowDstPort;
+        this->activityTimeout=activityTimeout;
     }
 
-    BasicFlow(bool isBidirectional, BasicPacketInfo packet) {
+    BasicFlow(bool isBidirectional, BasicPacketInfo packet, long activityTimeout) {
         initParameters();
+        this->activityTimeout=activityTimeout;
         this->isBidirectional = isBidirectional;
         firstPacket(packet); // Define this function as well.
     }
 
-    BasicFlow(BasicPacketInfo packet) {
+    BasicFlow(BasicPacketInfo packet, long activityTimeout) {
         initParameters();
+        this->activityTimeout=activityTimeout;
         isBidirectional = true;
         firstPacket(packet); // Define this function.
     }
@@ -224,7 +228,11 @@ public:
             }
         }
         protocol = packet.getProtocol();
-        flowId = packet.getFlowId();
+        flowId = ip2str(src) + "-" + ip2str(dst) + "-" + std::to_string(srcPort) + "-" + std::to_string(dstPort) + "-" + std::to_string(protocol);;
+    }
+
+    std::string getFlowId() const {
+        return flowId;
     }
 
     void addPacket(BasicPacketInfo& packet) {
@@ -324,7 +332,7 @@ public:
         // Commented out the print statement, equivalent to //System.out.print(" - "+(packet.timeStamp - sfLastPacketTS));
         if ((packet.getTimeStamp() - sfLastPacketTS) / static_cast<double>(1000000) > 1.0) {
             sfCount++;
-            updateActiveIdleTime(packet.getTimeStamp() - sfLastPacketTS, 5000000L);
+            updateActiveIdleTime(packet.getTimeStamp() - sfLastPacketTS, activityTimeout);
             sfAcHelper = packet.getTimeStamp();
         }
 
@@ -596,19 +604,16 @@ public:
     std::string dumpFlowBasedFeaturesEx() const {
         std::ostringstream stream;
 
-    stream << "Flow Features:" << std::endl;
-    stream << "Forward Bytes: " << forwardBytes << std::endl;
-    stream << "Backward Bytes: " << backwardBytes << std::endl;
-    stream << "Flow Duration: " << getFlowDuration() << std::endl;
-    stream << "Number of Forward Packets: " << forward.size() << std::endl;
-    stream << "Number of Backward Packets: " << backward.size() << std::endl;
-    
-    std::cout<<stream.str()<<std::endl;
-    std::cout<<"-------------------------------"<<std::endl;
+        stream << "Flow Features:" << std::endl;
+        stream << "Forward Bytes: " << forwardBytes << std::endl;
+        stream << "Backward Bytes: " << backwardBytes << std::endl;
+        stream << "Flow Duration: " << getFlowDuration() << std::endl;
+        stream << "Number of Forward Packets: " << forward.size() << std::endl;
+        stream << "Number of Backward Packets: " << backward.size() << std::endl;
 
-    // 添加更多你感兴趣的字段...
-    
-    return stream.str();
+        // 添加更多你感兴趣的字段...
+        
+        return stream.str();
     }
 
 };

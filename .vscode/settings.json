@@ -72,7 +72,9 @@
         "typeindex": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "strstream": "cpp",
+        "cfenv": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

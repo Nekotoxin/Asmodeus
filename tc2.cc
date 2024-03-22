@@ -48,7 +48,7 @@ int handle_event(void *ctx, void *data, size_t len)
     if (e->protocol == 6) { // TCP
         src_port = ntohs(e->transport_info.tcp_info.source);
         dst_port = ntohs(e->transport_info.tcp_info.dest);
-        BasicPacketInfo pkt(src_ip, dst_ip, src_port, dst_port, e->protocol, e->timestamp_ns / 1000000, packet_id_generator);
+        BasicPacketInfo pkt(src_ip, dst_ip, src_port, dst_port, e->protocol, e->timestamp_ns / 1000, packet_id_generator); // ns to microsecond
         pkt.setTCPWindow(ntohs(e->transport_info.tcp_info.window));
         pkt.setFlagFIN(e->transport_info.tcp_info.fin);
         pkt.setFlagSYN(e->transport_info.tcp_info.syn);
@@ -62,10 +62,12 @@ int handle_event(void *ctx, void *data, size_t len)
         unsigned int tcp_payload_length = ip_total_length - sizeof(struct iphdr) - tcp_header_length;
         pkt.setPayloadBytes(tcp_payload_length); 
         pkt.setHeaderBytes(tcp_header_length);
-        flow_mgr.addPacket(pkt);
+        // std::cout<<pkt.fwdFlowId()<<' '<<(pkt.hasFlagFIN()?"fin ":" ")<< (pkt.hasFlagACK()?"ack ":" ")<<std::endl;
+        flow_mgr.addPacket(pkt);        
     } else if (e->protocol == 17) { // UDP
         src_port = ntohs(e->transport_info.udp_info.source);
         dst_port = ntohs(e->transport_info.udp_info.dest);
+        if(src_port!=8000&&dst_port!=8000) return 0;
         BasicPacketInfo pkt(src_ip, dst_ip, src_port, dst_port, e->protocol, e->timestamp_ns / 1000000, packet_id_generator);
         unsigned int udp_payload_length = ip_total_length - sizeof(struct iphdr) - sizeof(struct udphdr);
         pkt.setPayloadBytes(udp_payload_length);
@@ -158,7 +160,7 @@ unsigned int get_interface_ip(char* if_name) {
     /* I want to get an IPv4 IP address */
     ifr.ifr_addr.sa_family = AF_INET; 
     /* I want IP address attached to "eth0" */
-    strncpy(ifr.ifr_name, "eth0", IFNAMSIZ-1);
+    strncpy(ifr.ifr_name, if_name, IFNAMSIZ-1);
     ioctl(fd, SIOCGIFADDR, &ifr);
     close(fd); 
     /* display result */
