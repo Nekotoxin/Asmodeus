@@ -24,10 +24,10 @@ public:
     std::vector<BasicPacketInfo> forward;
     std::vector<BasicPacketInfo> backward;
 
-    long forwardBytes;
-    long backwardBytes;
-    long fHeaderBytes;
-    long bHeaderBytes;
+    __u64 forwardBytes;
+    __u64 backwardBytes;
+    __u64 fHeaderBytes;
+    __u64 bHeaderBytes;
 
     bool isBidirectional;
 
@@ -40,8 +40,8 @@ public:
     int fFIN_cnt;
 	int bFIN_cnt;
 
-    long Act_data_pkt_forward;
-    long min_seg_size_forward;
+    __u64 Act_data_pkt_forward;
+    __u64 min_seg_size_forward;
     int Init_Win_bytes_forward = 0;
     int Init_Win_bytes_backward = 0;
 
@@ -50,9 +50,9 @@ public:
     int srcPort;
     int dstPort;
     int protocol;
-    long flowStartTime;
-    long startActiveTime;
-    long endActiveTime;
+    __u64 flowStartTime;
+    __u64 startActiveTime;
+    __u64 endActiveTime;
     std::string flowId;
 
     accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> flowIAT;
@@ -62,31 +62,31 @@ public:
     accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> flowActive;
     accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> flowIdle;
 
-    long flowLastSeen;
-    long forwardLastSeen;
-    long backwardLastSeen;
-    long activityTimeout;
+    __u64 flowLastSeen;
+    __u64 forwardLastSeen;
+    __u64 backwardLastSeen;
+    __u64 activityTimeout;
 
-    long fbulkDuration = 0;
-    long fbulkPacketCount = 0;
-    long fbulkSizeTotal = 0;
-    long fbulkStateCount = 0;
-    long fbulkPacketCountHelper = 0;
-    long fbulkStartHelper = 0;
-    long fbulkSizeHelper = 0;
-    long flastBulkTS = 0;
-    long bbulkDuration = 0;
-    long bbulkPacketCount = 0;
-    long bbulkSizeTotal = 0;
-    long bbulkStateCount = 0;
-    long bbulkPacketCountHelper = 0;
-    long bbulkStartHelper = 0;
-    long bbulkSizeHelper = 0;
-    long blastBulkTS = 0;
+    __u64 fbulkDuration = 0;
+    __u64 fbulkPacketCount = 0;
+    __u64 fbulkSizeTotal = 0;
+    __u64 fbulkStateCount = 0;
+    __u64 fbulkPacketCountHelper = 0;
+    __u64 fbulkStartHelper = 0;
+    __u64 fbulkSizeHelper = 0;
+    __u64 flastBulkTS = 0;
+    __u64 bbulkDuration = 0;
+    __u64 bbulkPacketCount = 0;
+    __u64 bbulkSizeTotal = 0;
+    __u64 bbulkStateCount = 0;
+    __u64 bbulkPacketCountHelper = 0;
+    __u64 bbulkStartHelper = 0;
+    __u64 bbulkSizeHelper = 0;
+    __u64 blastBulkTS = 0;
 
-    long sfLastPacketTS = -1;
+    __u64 sfLastPacketTS = -1;
     int sfCount = 0;
-    long sfAcHelper = -1;
+    __u64 sfAcHelper = -1;
 public:
     void initFlags() {
         flagCounts["FIN"] = 0;
@@ -135,10 +135,10 @@ public:
         flagCounts.clear();
         initFlags(); // You need to define this function based on how you want to initialize flags.
 
-        forwardBytes = 0L;
-        backwardBytes = 0L;
-        startActiveTime = 0L;
-        endActiveTime = 0L;
+        forwardBytes = 0ULL;
+        backwardBytes = 0ULL;
+        startActiveTime = 0ULL;
+        endActiveTime = 0ULL;
         src.clear();
         dst.clear();
         fPSH_cnt = 0;
@@ -147,13 +147,13 @@ public:
         bURG_cnt = 0;
         fFIN_cnt = 0;
         bFIN_cnt = 0;
-        fHeaderBytes = 0L;
-        bHeaderBytes = 0L;
+        fHeaderBytes = 0ULL;
+        bHeaderBytes = 0ULL;
     }
 
 public:
     BasicFlow(){}
-    BasicFlow(bool isBidirectional, BasicPacketInfo packet, std::vector<uint8_t> flowSrc, std::vector<uint8_t> flowDst, int flowSrcPort, int flowDstPort, long activityTimeout) {
+    BasicFlow(bool isBidirectional, BasicPacketInfo packet, std::vector<uint8_t> flowSrc, std::vector<uint8_t> flowDst, int flowSrcPort, int flowDstPort, __u64 activityTimeout) {
         initParameters();
         this->isBidirectional = isBidirectional;
         firstPacket(packet); // You need to define this function based on how you handle the first packet.
@@ -164,14 +164,14 @@ public:
         this->activityTimeout=activityTimeout;
     }
 
-    BasicFlow(bool isBidirectional, BasicPacketInfo packet, long activityTimeout) {
+    BasicFlow(bool isBidirectional, BasicPacketInfo packet, __u64 activityTimeout) {
         initParameters();
         this->activityTimeout=activityTimeout;
         this->isBidirectional = isBidirectional;
         firstPacket(packet); // Define this function as well.
     }
 
-    BasicFlow(BasicPacketInfo packet, long activityTimeout) {
+    BasicFlow(BasicPacketInfo packet, __u64 activityTimeout) {
         initParameters();
         this->activityTimeout=activityTimeout;
         isBidirectional = true;
@@ -350,8 +350,8 @@ public:
 
 
     // Public members and methods (to be defined...)
-    void updateForwardBulk(BasicPacketInfo& packet, long tsOflastBulkInOther) {
-        long size = packet.getPayloadBytes();
+    void updateForwardBulk(BasicPacketInfo& packet, __u64 tsOflastBulkInOther) {
+        __u64 size = packet.getPayloadBytes();
         if (tsOflastBulkInOther > fbulkStartHelper) {
             fbulkStartHelper = 0;
         }
@@ -394,8 +394,8 @@ public:
         }
     }
 
-    void updateBackwardBulk(BasicPacketInfo& packet, long tsOflastBulkInOther) {
-        long size = packet.getPayloadBytes();
+    void updateBackwardBulk(BasicPacketInfo& packet, __u64 tsOflastBulkInOther) {
+        __u64 size = packet.getPayloadBytes();
         if (tsOflastBulkInOther > bbulkStartHelper) {
             bbulkStartHelper = 0;
         }
@@ -439,7 +439,7 @@ public:
     }
 
     double getfPktsPerSecond() {
-        long duration = flowLastSeen - flowStartTime;
+        __u64 duration = flowLastSeen - flowStartTime;
         if (duration > 0) {
             return (static_cast<double>(forward.size()) / (duration / 1000000.0));
         } else {
@@ -457,7 +457,7 @@ public:
 
 
     double getbPktsPerSecond() {
-        long duration = flowLastSeen - flowStartTime;
+        __u64 duration = flowLastSeen - flowStartTime;
         if (duration > 0) {
             return (static_cast<double>(backward.size()) / (duration / 1000000.0));
         } else {
@@ -494,22 +494,22 @@ public:
         return 0.0;
     }
 //---
-    long getSflow_fbytes() {
+    __u64 getSflow_fbytes() {
         if (sfCount <= 0) return 0;
         return forwardBytes / sfCount;
     }
 
-    long getSflow_fpackets() {
+    __u64 getSflow_fpackets() {
         if (sfCount <= 0) return 0;
         return forward.size() / sfCount;
     }
 
-    long getSflow_bbytes() {
+    __u64 getSflow_bbytes() {
         if (sfCount <= 0) return 0;
         return backwardBytes / sfCount;
     }
 
-    long getSflow_bpackets() {
+    __u64 getSflow_bpackets() {
         if (sfCount <= 0) return 0;
         return backward.size() / sfCount;
     }
@@ -518,23 +518,23 @@ public:
         return fbulkDuration / static_cast<double>(1000000);
     }
 
-    long fAvgBytesPerBulk() {
+    __u64 fAvgBytesPerBulk() {
         if (fbulkStateCount != 0) {
             return fbulkSizeTotal / fbulkStateCount;
         }
         return 0;
     }
 
-    long fAvgPacketsPerBulk() {
+    __u64 fAvgPacketsPerBulk() {
         if (fbulkStateCount != 0) {
             return fbulkPacketCount / fbulkStateCount;
         }
         return 0;
     }
 
-    long fAvgBulkRate() {
+    __u64 fAvgBulkRate() {
         if (fbulkDuration != 0) {
-            return static_cast<long>(fbulkSizeTotal / fbulkDurationInSecond());
+            return static_cast<__u64>(fbulkSizeTotal / fbulkDurationInSecond());
         }
         return 0;
     }
@@ -544,21 +544,21 @@ public:
         return bbulkDuration / static_cast<double>(1000000);
     }
 
-    long bAvgPacketsPerBulk() {
+    __u64 bAvgPacketsPerBulk() {
         if (bbulkStateCount != 0) {
             return bbulkPacketCount / bbulkStateCount;
         }
         return 0;
     }
 
-    long bAvgBulkRate() {
+    __u64 bAvgBulkRate() {
         if (bbulkDuration != 0) {
-            return static_cast<long>(bbulkSizeTotal / bbulkDurationInSecond());
+            return static_cast<__u64>(bbulkSizeTotal / bbulkDurationInSecond());
         }
         return 0;
     }
 
-    void updateActiveIdleTime(long currentTime, long threshold) {
+    void updateActiveIdleTime(__u64 currentTime, __u64 threshold) {
         if ((currentTime - endActiveTime) > threshold) {
             if ((endActiveTime - startActiveTime) > 0) {
                 // Assuming flowActive is a Boost accumulator or similar structure

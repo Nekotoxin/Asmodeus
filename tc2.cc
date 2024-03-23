@@ -16,7 +16,7 @@
 #include <iostream>
 
 #include "FlowGenerator.h"
-FlowGenerator flow_mgr(true, 120000000L, 5000000L);
+FlowGenerator flow_mgr(true, 120000000ULL, 5000000ULL);
 IdGenerator packet_id_generator;
 
 __u32 interface_ip;

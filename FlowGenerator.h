@@ -16,7 +16,7 @@ public:
     __u64 flowTimeOut;
     __u64 flowActivityTimeOut;
 
-    FlowGenerator(bool bidirectional, long flowTimeout, long activityTimeout)
+    FlowGenerator(bool bidirectional, __u64 flowTimeout, __u64 activityTimeout)
         : bidirectional(bidirectional), flowTimeOut(flowTimeout), flowActivityTimeOut(activityTimeout) {
         init();
     }

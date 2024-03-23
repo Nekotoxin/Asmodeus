@@ -21,14 +21,14 @@ std::string ip2str(const std::vector<uint8_t>& addr) {
 
 class BasicPacketInfo {
 private:
-    long id;
+    __u64 id;
     std::vector<uint8_t> src;
     std::vector<uint8_t> dst;
     int srcPort;
     int dstPort;
     int protocol;
     __u64 timeStamp;
-    long payloadBytes;
+    __u64 payloadBytes;
     std::string flowId;  
     bool flagFIN = false;
     bool flagPSH = false;
@@ -39,7 +39,7 @@ private:
     bool flagCWR = false;
     bool flagRST = false;
     int TCPWindow = 0;
-    long headerBytes;
+    __u64 headerBytes;
     int payloadPacket = 0;
 
 public:
@@ -77,11 +77,11 @@ public:
         return ++payloadPacket;
     }
     
-    long getId() const {
+    __u64 getId() const {
         return id;
     }
 
-    void setId(long newId) {
+    void setId(__u64 newId) {
         id = newId;
     }
 
@@ -137,19 +137,19 @@ public:
         flowId = newFlowId;
     }
 
-    long getPayloadBytes() const {
+    __u64 getPayloadBytes() const {
         return payloadBytes;
     }
 
-    void setPayloadBytes(long newPayloadBytes) {
+    void setPayloadBytes(__u64 newPayloadBytes) {
         payloadBytes = newPayloadBytes;
     }
 
-    long getHeaderBytes() const {
+    __u64 getHeaderBytes() const {
         return headerBytes;
     }
 
-    void setHeaderBytes(long newHeaderBytes) {
+    void setHeaderBytes(__u64 newHeaderBytes) {
         headerBytes = newHeaderBytes;
     }
 
