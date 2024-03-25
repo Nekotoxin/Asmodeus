@@ -20,9 +20,9 @@ VMLINUX := deps/vmlinux/$(ARCH)/vmlinux.h
 # Use our own libbpf API headers and Linux UAPI headers distributed with
 # libbpf to avoid dependency on system-wide headers, which could be missing or
 # outdated
-INCLUDES := -I$(OUTPUT) -Ideps/libbpf/include/uapi -I$(dir $(VMLINUX))
+INCLUDES := -I$(OUTPUT) -Ideps/libbpf/include/uapi -I$(dir $(VMLINUX)) -Ideps/onnxruntime-linux-x64-1.17.1/include
 CFLAGS := -g -Wall
-ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS)
+ALL_LDFLAGS := $(LDFLAGS) $(EXTRA_LDFLAGS) -lonnxruntime
 
 APPS = tc2 # minimal minimal_legacy uprobe kprobe fentry usdt sockfilter tc ksyscall
 

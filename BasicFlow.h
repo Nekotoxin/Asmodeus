@@ -89,10 +89,10 @@ public:
     int64_t sfLastPacketTS = -1;
     int sfCount = 0;
     int64_t sfAcHelper = -1;
-public:
-    std::vector<double> dump() {
-        FlowFeature flowFeature;
 
+    FlowFeature flowFeature;
+public:
+    std::vector<float> dump() {
         flowFeature.featureMap["Destination Port"] = dstPort; // 1
         flowFeature.featureMap["Flow Duration"] = getFlowDuration(); // 2
         flowFeature.featureMap["Total Fwd Packets"] = forward.size(); // 3
