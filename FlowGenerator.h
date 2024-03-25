@@ -13,10 +13,10 @@ public:
     std::unordered_map<std::string, std::vector<std::string>> IPAddresses;  // Assuming string representation for IPs
 
     bool bidirectional;
-    __u64 flowTimeOut;
-    __u64 flowActivityTimeOut;
+    int64_t flowTimeOut;
+    int64_t flowActivityTimeOut;
 
-    FlowGenerator(bool bidirectional, __u64 flowTimeout, __u64 activityTimeout)
+    FlowGenerator(bool bidirectional, int64_t flowTimeout, int64_t activityTimeout)
         : bidirectional(bidirectional), flowTimeOut(flowTimeout), flowActivityTimeOut(activityTimeout) {
         init();
     }
@@ -28,7 +28,7 @@ public:
 
     void addPacket(BasicPacketInfo packet) {
         BasicFlow flow;
-        __u64 currentTimestamp = packet.getTimeStamp();
+        int64_t currentTimestamp = packet.getTimeStamp();
         std::string id;
 
         if (currentFlows.find(packet.fwdFlowId()) != currentFlows.end() || currentFlows.find(packet.bwdFlowId()) != currentFlows.end()) {
@@ -113,15 +113,11 @@ public:
         }
     }
 
-    void onFlowGenerated(const BasicFlow& flow) { //一个流结束，生成记录
+    void onFlowGenerated(BasicFlow& flow) { //一个流结束，生成记录
         std::string flowDump = flow.dumpFlowBasedFeaturesEx();
-        std::cout<<"generated:"<<flow.getFlowId()<<std::endl;
         std::cout<<"now has "<<currentFlows.size()<<" flow "<<std::endl;
-        for (const auto& pair : currentFlows) {
-            BasicFlow f=pair.second;
-            std::cout <<f.getFlowId()<<" "<<f.fFIN_cnt<<' '<< f.bFIN_cnt << std::endl;
-        }
-        std::cout<<"--------------"<<std::endl;
+        std::cout<<"generated:"<<flow.getFlowId()<<std::endl;
+        auto feature_vec=flow.dump();
     }
 
 };

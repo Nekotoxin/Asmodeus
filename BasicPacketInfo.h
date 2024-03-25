@@ -21,14 +21,14 @@ std::string ip2str(const std::vector<uint8_t>& addr) {
 
 class BasicPacketInfo {
 private:
-    __u64 id;
+    int64_t id;
     std::vector<uint8_t> src;
     std::vector<uint8_t> dst;
     int srcPort;
     int dstPort;
     int protocol;
-    __u64 timeStamp;
-    __u64 payloadBytes;
+    int64_t timeStamp;
+    int64_t payloadBytes;
     std::string flowId;  
     bool flagFIN = false;
     bool flagPSH = false;
@@ -39,12 +39,12 @@ private:
     bool flagCWR = false;
     bool flagRST = false;
     int TCPWindow = 0;
-    __u64 headerBytes;
+    int64_t headerBytes;
     int payloadPacket = 0;
 
 public:
     BasicPacketInfo(const std::vector<uint8_t>& src, const std::vector<uint8_t>& dst, int srcPort, int dstPort,
-                    int protocol, __u64 timeStamp, IdGenerator& generator)
+                    int protocol, int64_t timeStamp, IdGenerator& generator)
         : src(src), dst(dst), srcPort(srcPort), dstPort(dstPort), protocol(protocol), timeStamp(timeStamp) {
         id = generator.nextId();
     }
@@ -77,11 +77,11 @@ public:
         return ++payloadPacket;
     }
     
-    __u64 getId() const {
+    int64_t getId() const {
         return id;
     }
 
-    void setId(__u64 newId) {
+    void setId(int64_t newId) {
         id = newId;
     }
 
@@ -125,11 +125,11 @@ public:
         protocol = newProtocol;
     }
 
-    __u64 getTimeStamp() const {
+    int64_t getTimeStamp() const {
         return timeStamp;
     }
 
-    void setTimeStamp(__u64 newTimeStamp) {
+    void setTimeStamp(int64_t newTimeStamp) {
         timeStamp = newTimeStamp;
     }
 
@@ -137,19 +137,19 @@ public:
         flowId = newFlowId;
     }
 
-    __u64 getPayloadBytes() const {
+    int64_t getPayloadBytes() const {
         return payloadBytes;
     }
 
-    void setPayloadBytes(__u64 newPayloadBytes) {
+    void setPayloadBytes(int64_t newPayloadBytes) {
         payloadBytes = newPayloadBytes;
     }
 
-    __u64 getHeaderBytes() const {
+    int64_t getHeaderBytes() const {
         return headerBytes;
     }
 
-    void setHeaderBytes(__u64 newHeaderBytes) {
+    void setHeaderBytes(int64_t newHeaderBytes) {
         headerBytes = newHeaderBytes;
     }
 

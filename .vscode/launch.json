@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/tc2",
-            "args": ["lo"],
+            "args": ["eth0"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

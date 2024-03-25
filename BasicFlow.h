@@ -6,6 +6,8 @@
 #include <cstdint> // for std::uint8_t
 #include "BasicPacketInfo.h" // Include your translated BasicPacketInfo class
 
+#include "FlowFeature.h"
+
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/mean.hpp>
@@ -20,14 +22,15 @@ public:
     static const std::string separator;
     accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> fwdPktStats;
     accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> bwdPktStats;
+    accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> PktStats;
     
     std::vector<BasicPacketInfo> forward;
     std::vector<BasicPacketInfo> backward;
 
-    __u64 forwardBytes;
-    __u64 backwardBytes;
-    __u64 fHeaderBytes;
-    __u64 bHeaderBytes;
+    int64_t forwardBytes;
+    int64_t backwardBytes;
+    int64_t fHeaderBytes;
+    int64_t bHeaderBytes;
 
     bool isBidirectional;
 
@@ -40,8 +43,8 @@ public:
     int fFIN_cnt;
 	int bFIN_cnt;
 
-    __u64 Act_data_pkt_forward;
-    __u64 min_seg_size_forward;
+    int64_t Act_data_pkt_forward;
+    int64_t min_seg_size_forward;
     int Init_Win_bytes_forward = 0;
     int Init_Win_bytes_backward = 0;
 
@@ -50,44 +53,130 @@ public:
     int srcPort;
     int dstPort;
     int protocol;
-    __u64 flowStartTime;
-    __u64 startActiveTime;
-    __u64 endActiveTime;
+    int64_t flowStartTime;
+    int64_t startActiveTime;
+    int64_t endActiveTime;
     std::string flowId;
 
     accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> flowIAT;
     accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> forwardIAT;
     accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> backwardIAT;
-    accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> flowLengthStats;
     accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> flowActive;
     accumulator_set<double, stats<tag::mean, tag::variance, tag::min, tag::max, tag::sum>> flowIdle;
 
-    __u64 flowLastSeen;
-    __u64 forwardLastSeen;
-    __u64 backwardLastSeen;
-    __u64 activityTimeout;
+    int64_t flowLastSeen;
+    int64_t forwardLastSeen;
+    int64_t backwardLastSeen;
+    int64_t activityTimeout;
 
-    __u64 fbulkDuration = 0;
-    __u64 fbulkPacketCount = 0;
-    __u64 fbulkSizeTotal = 0;
-    __u64 fbulkStateCount = 0;
-    __u64 fbulkPacketCountHelper = 0;
-    __u64 fbulkStartHelper = 0;
-    __u64 fbulkSizeHelper = 0;
-    __u64 flastBulkTS = 0;
-    __u64 bbulkDuration = 0;
-    __u64 bbulkPacketCount = 0;
-    __u64 bbulkSizeTotal = 0;
-    __u64 bbulkStateCount = 0;
-    __u64 bbulkPacketCountHelper = 0;
-    __u64 bbulkStartHelper = 0;
-    __u64 bbulkSizeHelper = 0;
-    __u64 blastBulkTS = 0;
+    int64_t fbulkDuration = 0;
+    int64_t fbulkPacketCount = 0;
+    int64_t fbulkSizeTotal = 0;
+    int64_t fbulkStateCount = 0;
+    int64_t fbulkPacketCountHelper = 0;
+    int64_t fbulkStartHelper = 0;
+    int64_t fbulkSizeHelper = 0;
+    int64_t flastBulkTS = 0;
+    int64_t bbulkDuration = 0;
+    int64_t bbulkPacketCount = 0;
+    int64_t bbulkSizeTotal = 0;
+    int64_t bbulkStateCount = 0;
+    int64_t bbulkPacketCountHelper = 0;
+    int64_t bbulkStartHelper = 0;
+    int64_t bbulkSizeHelper = 0;
+    int64_t blastBulkTS = 0;
 
-    __u64 sfLastPacketTS = -1;
+    int64_t sfLastPacketTS = -1;
     int sfCount = 0;
-    __u64 sfAcHelper = -1;
+    int64_t sfAcHelper = -1;
 public:
+    std::vector<double> dump() {
+        FlowFeature flowFeature;
+
+        flowFeature.featureMap["Destination Port"] = dstPort; // 1
+        flowFeature.featureMap["Flow Duration"] = getFlowDuration(); // 2
+        flowFeature.featureMap["Total Fwd Packets"] = forward.size(); // 3
+        flowFeature.featureMap["Total Backward Packets"] = backward.size(); // 4
+        flowFeature.featureMap["Total Length of Fwd Packets"] = forwardBytes; // 5
+        flowFeature.featureMap["Total Length of Bwd Packets"] = backwardBytes; // 6
+        flowFeature.featureMap["Fwd Packet Length Max"] = extract::max(fwdPktStats); // 7
+        flowFeature.featureMap["Fwd Packet Length Min"] = extract::min(fwdPktStats); // 8
+        flowFeature.featureMap["Fwd Packet Length Mean"] = extract::mean(fwdPktStats); // 9
+        flowFeature.featureMap["Fwd Packet Length Std"] = sqrt(extract::variance(fwdPktStats)); // 10
+        flowFeature.featureMap["Bwd Packet Length Max"] = extract::max(bwdPktStats); // 11
+        flowFeature.featureMap["Bwd Packet Length Min"] = extract::min(bwdPktStats); // 12
+        flowFeature.featureMap["Bwd Packet Length Mean"] = extract::mean(bwdPktStats); // 13
+        flowFeature.featureMap["Bwd Packet Length Std"] = sqrt(extract::variance(bwdPktStats)); // 14
+        // Assuming flowDuration is in microseconds for these calculations
+        double flowDurationInSeconds = static_cast<double>(getFlowDuration()) / 1000000.0; // Convert microseconds to seconds
+        flowFeature.featureMap["Flow Bytes/s"] = (flowDurationInSeconds > 0) ? (static_cast<double>(forwardBytes + backwardBytes) / flowDurationInSeconds) : 0; // 15
+        flowFeature.featureMap["Flow Packets/s"] = (flowDurationInSeconds > 0) ? (static_cast<double>(forward.size() + backward.size()) / flowDurationInSeconds) : 0; // 16
+        flowFeature.featureMap["Flow IAT Mean"] = extract::mean(flowIAT); // 17
+        flowFeature.featureMap["Flow IAT Std"] = sqrt(extract::variance(flowIAT)); // 18
+        flowFeature.featureMap["Flow IAT Max"] = extract::max(flowIAT); // 19
+        flowFeature.featureMap["Flow IAT Min"] = extract::min(flowIAT); // 20
+        flowFeature.featureMap["Fwd IAT Total"] = extract::sum(forwardIAT); // 21
+        flowFeature.featureMap["Fwd IAT Mean"] = extract::mean(forwardIAT); // 22
+        flowFeature.featureMap["Fwd IAT Std"] = sqrt(extract::variance(forwardIAT)); // 23
+        flowFeature.featureMap["Fwd IAT Max"] = extract::max(forwardIAT); // 24
+        flowFeature.featureMap["Fwd IAT Min"] = extract::min(forwardIAT); // 25
+        flowFeature.featureMap["Bwd IAT Total"] = extract::sum(backwardIAT); // 26
+        flowFeature.featureMap["Bwd IAT Mean"] = extract::mean(backwardIAT); // 27
+        flowFeature.featureMap["Bwd IAT Std"] = sqrt(extract::variance(backwardIAT)); // 28
+        flowFeature.featureMap["Bwd IAT Max"] = extract::max(backwardIAT); // 29
+        flowFeature.featureMap["Bwd IAT Min"] = extract::min(backwardIAT); // 30
+        flowFeature.featureMap["Fwd PSH Flags"] = fPSH_cnt; // 31
+        flowFeature.featureMap["Bwd PSH Flags"] = bPSH_cnt; // 32
+        flowFeature.featureMap["Fwd URG Flags"] = fURG_cnt; // 33
+        flowFeature.featureMap["Bwd URG Flags"] = bURG_cnt; // 34
+        flowFeature.featureMap["Fwd Header Length"] = fHeaderBytes; // 35
+        flowFeature.featureMap["Bwd Header Length"] = bHeaderBytes; // 36
+        flowFeature.featureMap["Fwd Packets/s"] = getfPktsPerSecond(); // 37
+        flowFeature.featureMap["Bwd Packets/s"] = getbPktsPerSecond(); // 38
+        flowFeature.featureMap["Min Packet Length"] = extract::min(PktStats); // 39
+        flowFeature.featureMap["Max Packet Length"] = extract::max(PktStats); // 40
+        flowFeature.featureMap["Packet Length Mean"] = extract::mean(PktStats); // 41
+        flowFeature.featureMap["Packet Length Std"] = sqrt(extract::variance(PktStats)); // 42
+        flowFeature.featureMap["Packet Length Variance"] = extract::variance(PktStats); // 43
+        flowFeature.featureMap["FIN Flag Count"] = flagCounts["FIN"]; // 44
+        flowFeature.featureMap["SYN Flag Count"] = flagCounts["SYN"]; // 45
+        flowFeature.featureMap["RST Flag Count"] = flagCounts["RST"]; // 46
+        flowFeature.featureMap["PSH Flag Count"] = flagCounts["PSH"]; // 47
+        flowFeature.featureMap["ACK Flag Count"] = flagCounts["ACK"]; // 48
+        flowFeature.featureMap["URG Flag Count"] = flagCounts["URG"]; // 49
+        flowFeature.featureMap["CWE Flag Count"] = flagCounts["CWR"]; // 50
+        flowFeature.featureMap["ECE Flag Count"] = flagCounts["ECE"]; // 51
+        flowFeature.featureMap["Down/Up Ratio"] = getDownUpRatio(); // 52
+        flowFeature.featureMap["Average Packet Size"] = getAvgPacketSize(); // 53
+        flowFeature.featureMap["Avg Fwd Segment Size"] = fAvgSegmentSize(); // 54
+        flowFeature.featureMap["Avg Bwd Segment Size"] = bAvgSegmentSize(); // 55
+        flowFeature.featureMap["Fwd Header Length"] = fHeaderBytes; // 56 (Repeated intentionally as per instructions)
+        flowFeature.featureMap["Fwd Avg Bytes/Bulk"] = fAvgBytesPerBulk(); // 57
+        flowFeature.featureMap["Fwd Avg Packets/Bulk"] = fAvgPacketsPerBulk(); // 58
+        flowFeature.featureMap["Fwd Avg Bulk Rate"] = fAvgBulkRate(); // 59
+        flowFeature.featureMap["Bwd Avg Bytes/Bulk"] = bAvgBytesPerBulk(); // 60
+        flowFeature.featureMap["Bwd Avg Packets/Bulk"] = bAvgPacketsPerBulk(); // 61
+        flowFeature.featureMap["Bwd Avg Bulk Rate"] = bAvgBulkRate(); // 62
+        flowFeature.featureMap["Subflow Fwd Packets"] = getSflow_fpackets(); // 63
+        flowFeature.featureMap["Subflow Fwd Bytes"] = getSflow_fbytes(); // 64
+        flowFeature.featureMap["Subflow Bwd Packets"] = getSflow_bpackets(); // 65
+        flowFeature.featureMap["Subflow Bwd Bytes"] = getSflow_bbytes(); // 66
+        flowFeature.featureMap["Init_Win_bytes_forward"] = Init_Win_bytes_forward; // 67
+        flowFeature.featureMap["Init_Win_bytes_backward"] = Init_Win_bytes_backward; // 68
+        flowFeature.featureMap["act_data_pkt_fwd"] = Act_data_pkt_forward; // 69
+        flowFeature.featureMap["min_seg_size_forward"] = min_seg_size_forward; // 70
+        flowFeature.featureMap["Active Mean"] = extract::mean(flowActive); // 71
+        flowFeature.featureMap["Active Std"] = sqrt(extract::variance(flowActive)); // 72
+        flowFeature.featureMap["Active Max"] = extract::max(flowActive); // 73
+        flowFeature.featureMap["Active Min"] = extract::min(flowActive); // 74
+        flowFeature.featureMap["Idle Mean"] = extract::mean(flowIdle); // 75
+        flowFeature.featureMap["Idle Std"] = sqrt(extract::variance(flowIdle)); // 76
+        flowFeature.featureMap["Idle Max"] = extract::max(flowIdle); // 77
+        flowFeature.featureMap["Idle Min"] = extract::min(flowIdle); // 78
+
+        return flowFeature.getRequiredFeatures();
+    }
+
     void initFlags() {
         flagCounts["FIN"] = 0;
         flagCounts["SYN"] = 0;
@@ -130,7 +219,7 @@ public:
         backwardIAT = {};
         flowActive = {};
         flowIdle = {};
-        flowLengthStats = {};
+        PktStats = {};
 
         flagCounts.clear();
         initFlags(); // You need to define this function based on how you want to initialize flags.
@@ -153,7 +242,7 @@ public:
 
 public:
     BasicFlow(){}
-    BasicFlow(bool isBidirectional, BasicPacketInfo packet, std::vector<uint8_t> flowSrc, std::vector<uint8_t> flowDst, int flowSrcPort, int flowDstPort, __u64 activityTimeout) {
+    BasicFlow(bool isBidirectional, BasicPacketInfo packet, std::vector<uint8_t> flowSrc, std::vector<uint8_t> flowDst, int flowSrcPort, int flowDstPort, int64_t activityTimeout) {
         initParameters();
         this->isBidirectional = isBidirectional;
         firstPacket(packet); // You need to define this function based on how you handle the first packet.
@@ -164,14 +253,14 @@ public:
         this->activityTimeout=activityTimeout;
     }
 
-    BasicFlow(bool isBidirectional, BasicPacketInfo packet, __u64 activityTimeout) {
+    BasicFlow(bool isBidirectional, BasicPacketInfo packet, int64_t activityTimeout) {
         initParameters();
         this->activityTimeout=activityTimeout;
         this->isBidirectional = isBidirectional;
         firstPacket(packet); // Define this function as well.
     }
 
-    BasicFlow(BasicPacketInfo packet, __u64 activityTimeout) {
+    BasicFlow(BasicPacketInfo packet, int64_t activityTimeout) {
         initParameters();
         this->activityTimeout=activityTimeout;
         isBidirectional = true;
@@ -186,8 +275,8 @@ public:
         flowLastSeen = packet.getTimeStamp();
         startActiveTime = packet.getTimeStamp();
         endActiveTime = packet.getTimeStamp();
-        // Assuming flowLengthStats is an accumulator now
-        flowLengthStats(packet.getPayloadBytes());
+        // Assuming PktStats is an accumulator now
+        PktStats(packet.getPayloadBytes());
 
         if (src.empty()) {
             src = packet.getSrc(); // Ensure this is a deep copy or appropriate reference handling
@@ -239,10 +328,10 @@ public:
         updateFlowBulk(packet);
         detectUpdateSubflows(packet);
         checkFlags(packet);
-        __u64 currentTimestamp = packet.getTimeStamp();
+        int64_t currentTimestamp = packet.getTimeStamp();
         if (isBidirectional) {
-            // Assuming flowLengthStats is an accumulator now
-            flowLengthStats(packet.getPayloadBytes());
+            // Assuming PktStats is an accumulator now
+            PktStats(packet.getPayloadBytes());
 
             if (src == packet.getSrc()) {
                 if (packet.getPayloadBytes() >= 1) {
@@ -278,8 +367,8 @@ public:
             }
             // Assuming fwdPktStats is an accumulator now
             fwdPktStats(packet.getPayloadBytes());
-            // Assuming flowLengthStats is an accumulator now
-            flowLengthStats(packet.getPayloadBytes());
+            // Assuming PktStats is an accumulator now
+            PktStats(packet.getPayloadBytes());
             fHeaderBytes += packet.getHeaderBytes();
             forward.push_back(packet);
             forwardBytes += packet.getPayloadBytes();
@@ -350,8 +439,8 @@ public:
 
 
     // Public members and methods (to be defined...)
-    void updateForwardBulk(BasicPacketInfo& packet, __u64 tsOflastBulkInOther) {
-        __u64 size = packet.getPayloadBytes();
+    void updateForwardBulk(BasicPacketInfo& packet, int64_t tsOflastBulkInOther) {
+        int64_t size = packet.getPayloadBytes();
         if (tsOflastBulkInOther > fbulkStartHelper) {
             fbulkStartHelper = 0;
         }
@@ -394,8 +483,8 @@ public:
         }
     }
 
-    void updateBackwardBulk(BasicPacketInfo& packet, __u64 tsOflastBulkInOther) {
-        __u64 size = packet.getPayloadBytes();
+    void updateBackwardBulk(BasicPacketInfo& packet, int64_t tsOflastBulkInOther) {
+        int64_t size = packet.getPayloadBytes();
         if (tsOflastBulkInOther > bbulkStartHelper) {
             bbulkStartHelper = 0;
         }
@@ -439,7 +528,7 @@ public:
     }
 
     double getfPktsPerSecond() {
-        __u64 duration = flowLastSeen - flowStartTime;
+        int64_t duration = flowLastSeen - flowStartTime;
         if (duration > 0) {
             return (static_cast<double>(forward.size()) / (duration / 1000000.0));
         } else {
@@ -457,7 +546,7 @@ public:
 
 
     double getbPktsPerSecond() {
-        __u64 duration = flowLastSeen - flowStartTime;
+        int64_t duration = flowLastSeen - flowStartTime;
         if (duration > 0) {
             return (static_cast<double>(backward.size()) / (duration / 1000000.0));
         } else {
@@ -475,7 +564,7 @@ public:
     double getAvgPacketSize() {
         auto count = packetCount();
         if (count > 0) {
-            return boost::accumulators::extract::sum(flowLengthStats) / static_cast<double>(count);
+            return boost::accumulators::extract::sum(PktStats) / static_cast<double>(count);
         }
         return 0.0;
     }
@@ -494,22 +583,22 @@ public:
         return 0.0;
     }
 //---
-    __u64 getSflow_fbytes() {
+    int64_t getSflow_fbytes() {
         if (sfCount <= 0) return 0;
         return forwardBytes / sfCount;
     }
 
-    __u64 getSflow_fpackets() {
+    int64_t getSflow_fpackets() {
         if (sfCount <= 0) return 0;
         return forward.size() / sfCount;
     }
 
-    __u64 getSflow_bbytes() {
+    int64_t getSflow_bbytes() {
         if (sfCount <= 0) return 0;
         return backwardBytes / sfCount;
     }
 
-    __u64 getSflow_bpackets() {
+    int64_t getSflow_bpackets() {
         if (sfCount <= 0) return 0;
         return backward.size() / sfCount;
     }
@@ -518,23 +607,32 @@ public:
         return fbulkDuration / static_cast<double>(1000000);
     }
 
-    __u64 fAvgBytesPerBulk() {
+    int64_t fAvgBytesPerBulk() {
         if (fbulkStateCount != 0) {
             return fbulkSizeTotal / fbulkStateCount;
         }
         return 0;
     }
 
-    __u64 fAvgPacketsPerBulk() {
+    int64_t bAvgBytesPerBulk() {
+        if (bbulkStateCount != 0) {
+            return bbulkSizeTotal / bbulkStateCount;
+        }
+        return 0;
+    }
+
+    
+
+    int64_t fAvgPacketsPerBulk() {
         if (fbulkStateCount != 0) {
             return fbulkPacketCount / fbulkStateCount;
         }
         return 0;
     }
 
-    __u64 fAvgBulkRate() {
+    int64_t fAvgBulkRate() {
         if (fbulkDuration != 0) {
-            return static_cast<__u64>(fbulkSizeTotal / fbulkDurationInSecond());
+            return static_cast<int64_t>(fbulkSizeTotal / fbulkDurationInSecond());
         }
         return 0;
     }
@@ -544,21 +642,21 @@ public:
         return bbulkDuration / static_cast<double>(1000000);
     }
 
-    __u64 bAvgPacketsPerBulk() {
+    int64_t bAvgPacketsPerBulk() {
         if (bbulkStateCount != 0) {
             return bbulkPacketCount / bbulkStateCount;
         }
         return 0;
     }
 
-    __u64 bAvgBulkRate() {
+    int64_t bAvgBulkRate() {
         if (bbulkDuration != 0) {
-            return static_cast<__u64>(bbulkSizeTotal / bbulkDurationInSecond());
+            return static_cast<int64_t>(bbulkSizeTotal / bbulkDurationInSecond());
         }
         return 0;
     }
 
-    void updateActiveIdleTime(__u64 currentTime, __u64 threshold) {
+    void updateActiveIdleTime(int64_t currentTime, int64_t threshold) {
         if ((currentTime - endActiveTime) > threshold) {
             if ((endActiveTime - startActiveTime) > 0) {
                 // Assuming flowActive is a Boost accumulator or similar structure
@@ -593,11 +691,11 @@ public:
         return protocol;
     }
 
-    __u64 getFlowStartTime() {
+    int64_t getFlowStartTime() {
         return flowStartTime;
     }
 
-    __u64 getFlowDuration() const {
+    int64_t getFlowDuration() const {
         return flowLastSeen - flowStartTime;
     }
 
