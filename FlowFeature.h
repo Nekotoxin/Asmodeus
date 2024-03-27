@@ -29,7 +29,7 @@ public:
             } else {
                 // If not exists, add a placeholder value
                 featureValues.push_back(0.0); // Or any default value you prefer
-                // std::cout<<featureName<<": "<<"unexisted"<<std::endl;
+                std::cout<<featureName<<": "<<"unexisted"<<std::endl;
             }
         }
         return featureValues;
