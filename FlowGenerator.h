@@ -120,34 +120,51 @@ public:
     }
 
 
-    void onFlowGenerated(BasicFlow& flow) { 
-        // flow close, generated data
+    void onFlowGenerated(BasicFlow& flow) {
+        std::cout<<"------------------------------------------------------"<<std::endl;
         std::lock_guard<std::mutex> guard(ort_mtx);
         if (!session) return;
-        std::vector<float> input_tensor_values = flow.dump();
 
-        std::vector<int64_t> input_node_dims = {1, static_cast<int64_t>(input_tensor_values.size())}; // 假设batch size为1
-        std::vector<const char*> input_node_names = {"input"};
-
-        std::vector<const char*> output_node_names = {"output_label", "output_probability"};
+        // 构造输入Tensor
+        std::vector<float> input_tensor_values = flow.dump(); // 假设这些值已经是适当的浮点数格式
+        std::vector<int64_t> input_tensor_shape = {1, static_cast<int64_t>(input_tensor_values.size())};
         Ort::MemoryInfo memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-        // create input tensor
-        Ort::Value input_tensor = Ort::Value::CreateTensor<float>(memory_info, input_tensor_values.data(), input_tensor_values.size(), input_node_dims.data(), input_node_dims.size());
+        Ort::Value input_tensor = Ort::Value::CreateTensor<float>(memory_info, input_tensor_values.data(), input_tensor_values.size(), input_tensor_shape.data(), input_tensor_shape.size());
 
-        // inference
-        auto output_tensors = session->Run(Ort::RunOptions{nullptr}, input_node_names.data(), &input_tensor, 1, output_node_names.data(), output_node_names.size());
+        // 准备模型的输入和输出节点名称
+        const char* input_nodes[] = {"input"};
+        const char* output_nodes[] = {"output_label", "output_probability"};
 
-        // handle output
+        // 运行模型推理
+        auto output_tensors = session->Run(Ort::RunOptions{nullptr}, input_nodes, &input_tensor, 1, output_nodes, 2);
+
+        // 处理输出
         if (!output_tensors.empty()) {
-            auto& output_tensor = output_tensors.front();
-            int64_t* arr = output_tensor.GetTensorMutableData<int64_t>();
-            int pred=arr[0];
-            // if(pred!=0){
-                std::cout<<flow.getFlowId()<<" generated, ";
-                std::cout<<"predict result: "<<flow.flowFeature.pred_labels[pred]<<std::endl;
-            // }
-        }
+            // 处理output_label
+            auto& output_label_tensor = output_tensors[0];
+            auto output_label = output_label_tensor.GetTensorMutableData<int64_t>();
+            std::cout << "Predicted label: " << *output_label << std::endl;
 
-        
+            // 处理output_probability
+            Ort::Value& output_probability_seq = output_tensors[1];
+            size_t num_maps = output_probability_seq.GetCount(); // 获取序列中映射的数量
+
+            for (size_t i = 0; i < num_maps; ++i) {
+                Ort::Value map_value = output_probability_seq.GetValue(i, Ort::AllocatorWithDefaultOptions());
+                // 从映射中提取键和值
+                Ort::Value keys = map_value.GetValue(0, Ort::AllocatorWithDefaultOptions()); // 获取键
+                Ort::Value values = map_value.GetValue(1, Ort::AllocatorWithDefaultOptions()); // 获取值
+
+                // 假设键是int64_t类型，值是float类型
+                auto keys_data = keys.GetTensorData<int64_t>();
+                auto values_data = values.GetTensorData<float>();
+
+                std::cout << "Map " << i << ":" << std::endl;
+                for (size_t j = 0; j < keys.GetTensorTypeAndShapeInfo().GetElementCount(); ++j) {
+                    std::cout << "Class " << keys_data[j] << ": Probability " << values_data[j] << std::endl;
+                }
+            }
+        }
     }
+
 };

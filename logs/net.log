@@ -2,51 +2,438 @@ Interface eth0, index:2, IP address: 172.22.15.151
 eBPF program attached to traffic control subsystem
 Packet Capture Started, Please Ctrl+C to stop
 
-Destination Port: 443
-Flow Duration: 869736
-Total Fwd Packets: 10
-Total Length of Fwd Packets: 2697
-Fwd Packet Length Max: 1632
+Destination Port: 80
+Flow Duration: 42802
+Total Fwd Packets: 11
+Total Length of Fwd Packets: 13122
+Fwd Packet Length Max: 2000
 Fwd Packet Length Min: 0
-Fwd Packet Length Mean: 269.7
-Bwd Packet Length Max: 4532
+Fwd Packet Length Mean: 1192.91
+Bwd Packet Length Max: 165
 Bwd Packet Length Min: 0
-Flow Bytes/s: 9077.47
-Flow Packets/s: 19.5462
-Flow IAT Mean: 54358.5
-Flow IAT Std: 90040.7
-Flow IAT Max: 226159
-Flow IAT Min: 9
-Fwd IAT Mean: 96637.3
-Fwd IAT Std: 106804
-Fwd IAT Min: 63
-Bwd IAT Total: 664551
-Bwd IAT Mean: 110758
-Bwd IAT Std: 103456
-Bwd IAT Max: 227631
-Bwd IAT Min: 9
+Flow Bytes/s: 310429
+Flow Packets/s: 654.175
+Flow IAT Mean: 1585.26
+Flow IAT Std: 4336.51
+Flow IAT Max: 13890
+Flow IAT Min: 0
+Fwd IAT Mean: 4280.2
+Fwd IAT Std: 6496.83
+Fwd IAT Min: 6
+Bwd IAT Total: 28835
+Bwd IAT Mean: 1802.19
+Bwd IAT Std: 4581.22
+Bwd IAT Max: 14003
+Bwd IAT Min: 0
 Fwd PSH Flags: 0
 Fwd URG Flags: 0
-Fwd Header Length: 328
-Bwd Header Length: 244
-Bwd Packets/s: 8.04842
+Fwd Header Length: 240
+Bwd Header Length: 352
+Bwd Packets/s: 397.178
 Min Packet Length: 0
-Max Packet Length: 4532
-Packet Length Mean: 464.412
-Packet Length Variance: 1.19509e+06
+Max Packet Length: 2000
+Packet Length Mean: 474.536
+Packet Length Variance: 677891
 FIN Flag Count: 2
 RST Flag Count: 0
 PSH Flag Count: 8
-ACK Flag Count: 16
+ACK Flag Count: 27
 URG Flag Count: 0
-Down/Up Ratio: 0.7
+Down/Up Ratio: 1.54545
 Init_Win_bytes_forward: 32120
-Init_Win_bytes_backward: 16386
-act_data_pkt_fwd: 4
-min_seg_size_forward: 32
+Init_Win_bytes_backward: 432
+act_data_pkt_fwd: 2.0487e+12
+min_seg_size_forward: 20
 Active Mean: replaced by 0 due to NaN or Inf
 Active Std: 0
 Active Max: replaced by 0 due to NaN or Inf
 Active Min: replaced by 0 due to NaN or Inf
 Idle Std: 0
 Predicted label: 0
+Map 0:
+Class 0: Probability 0.995318
+Class 1: Probability 0.000228718
+Class 2: Probability 0.000233196
+Class 3: Probability 0.000230832
+Class 4: Probability 0.00130567
+Class 5: Probability 0.000235039
+Class 6: Probability 0.000594103
+Class 7: Probability 0.000228237
+Class 8: Probability 0.000228174
+Class 9: Probability 0.000652167
+Class 10: Probability 0.000279844
+Class 11: Probability 0.000228271
+Class 12: Probability 0.000237828
+Destination Port: 80
+Flow Duration: 14590
+Total Fwd Packets: 8
+Total Length of Fwd Packets: 13357
+Fwd Packet Length Max: 4320
+Fwd Packet Length Min: 0
+Fwd Packet Length Mean: 1669.62
+Bwd Packet Length Max: 165
+Bwd Packet Length Min: 0
+Flow Bytes/s: 926799
+Flow Packets/s: 1439.34
+Flow IAT Mean: 729.5
+Flow IAT Std: 1763.55
+Flow IAT Max: 5609
+Flow IAT Min: 0
+Fwd IAT Mean: 2084.29
+Fwd IAT Std: 3358.67
+Fwd IAT Min: 4
+Bwd IAT Total: 8936
+Bwd IAT Mean: 744.667
+Bwd IAT Std: 1735.12
+Bwd IAT Max: 5724
+Bwd IAT Min: 0
+Fwd PSH Flags: 0
+Fwd URG Flags: 0
+Fwd Header Length: 180
+Bwd Header Length: 272
+Bwd Packets/s: 891.021
+Min Packet Length: 0
+Max Packet Length: 4320
+Packet Length Mean: 643.905
+Packet Length Variance: 2.26025e+06
+FIN Flag Count: 2
+RST Flag Count: 0
+PSH Flag Count: 5
+ACK Flag Count: 20
+URG Flag Count: 0
+Down/Up Ratio: 1.625
+Init_Win_bytes_forward: 32120
+Init_Win_bytes_backward: 454
+act_data_pkt_fwd: 2.0487e+12
+min_seg_size_forward: 20
+Active Mean: replaced by 0 due to NaN or Inf
+Active Std: 0
+Active Max: replaced by 0 due to NaN or Inf
+Active Min: replaced by 0 due to NaN or Inf
+Idle Std: 0
+Predicted label: 0
+Map 0:
+Class 0: Probability 0.988922
+Class 1: Probability 3.08068e-05
+Class 2: Probability 3.14098e-05
+Class 3: Probability 3.10916e-05
+Class 4: Probability 0.0105846
+Class 5: Probability 0.000111802
+Class 6: Probability 3.85666e-05
+Class 7: Probability 3.0742e-05
+Class 8: Probability 3.07335e-05
+Class 9: Probability 8.78424e-05
+Class 10: Probability 3.76931e-05
+Class 11: Probability 3.07466e-05
+Class 12: Probability 3.20338e-05
+Destination Port: 3128
+Flow Duration: 149168
+Total Fwd Packets: 12
+Total Length of Fwd Packets: 1246
+Fwd Packet Length Max: 517
+Fwd Packet Length Min: 0
+Fwd Packet Length Mean: 103.833
+Bwd Packet Length Max: 5760
+Bwd Packet Length Min: 0
+Flow Bytes/s: 70444.1
+Flow Packets/s: 154.189
+Flow IAT Mean: 6780.36
+Flow IAT Std: 8228.59
+Flow IAT Max: 27933
+Flow IAT Min: 14
+Fwd IAT Mean: 12662.7
+Fwd IAT Std: 13300.1
+Fwd IAT Min: 24
+Bwd IAT Total: 139515
+Bwd IAT Mean: 13951.5
+Bwd IAT Std: 12295
+Bwd IAT Max: 43217
+Bwd IAT Min: 28
+Fwd PSH Flags: 0
+Fwd URG Flags: 0
+Fwd Header Length: 260
+Bwd Header Length: 232
+Bwd Packets/s: 73.7424
+Min Packet Length: 0
+Max Packet Length: 5760
+Packet Length Mean: 456.87
+Packet Length Variance: 1.51669e+06
+FIN Flag Count: 2
+RST Flag Count: 0
+PSH Flag Count: 12
+ACK Flag Count: 22
+URG Flag Count: 0
+Down/Up Ratio: 0.916667
+Init_Win_bytes_forward: 32120
+Init_Win_bytes_backward: 254
+act_data_pkt_fwd: 2.0487e+12
+min_seg_size_forward: 20
+Active Mean: replaced by 0 due to NaN or Inf
+Active Std: 0
+Active Max: replaced by 0 due to NaN or Inf
+Active Min: replaced by 0 due to NaN or Inf
+Idle Std: 0
+Predicted label: 0
+Map 0:
+Class 0: Probability 0.99838
+Class 1: Probability 0.00118582
+Class 2: Probability 3.54608e-05
+Class 3: Probability 3.6075e-05
+Class 4: Probability 7.30834e-05
+Class 5: Probability 3.57028e-05
+Class 6: Probability 3.56147e-05
+Class 7: Probability 3.47278e-05
+Class 8: Probability 3.47183e-05
+Class 9: Probability 3.97422e-05
+Class 10: Probability 3.83694e-05
+Class 11: Probability 3.4733e-05
+Class 12: Probability 3.61871e-05
+Destination Port: 80
+Flow Duration: 27310
+Total Fwd Packets: 12
+Total Length of Fwd Packets: 13255
+Fwd Packet Length Max: 2000
+Fwd Packet Length Min: 0
+Fwd Packet Length Mean: 1104.58
+Bwd Packet Length Max: 165
+Bwd Packet Length Min: 0
+Flow Bytes/s: 491395
+Flow Packets/s: 842.182
+Flow IAT Mean: 1241.36
+Flow IAT Std: 2973.22
+Flow IAT Max: 8759
+Flow IAT Min: 0
+Fwd IAT Mean: 2482.73
+Fwd IAT Std: 4025.16
+Fwd IAT Min: 5
+Bwd IAT Total: 18509
+Bwd IAT Mean: 1850.9
+Bwd IAT Std: 3461.66
+Bwd IAT Max: 8820
+Bwd IAT Min: 0
+Fwd PSH Flags: 0
+Fwd URG Flags: 0
+Fwd Header Length: 260
+Bwd Header Length: 232
+Bwd Packets/s: 402.783
+Min Packet Length: 0
+Max Packet Length: 2000
+Packet Length Mean: 583.478
+Packet Length Variance: 750520
+FIN Flag Count: 2
+RST Flag Count: 0
+PSH Flag Count: 9
+ACK Flag Count: 22
+URG Flag Count: 0
+Down/Up Ratio: 0.916667
+Init_Win_bytes_forward: 32120
+Init_Win_bytes_backward: 290
+act_data_pkt_fwd: 2.0487e+12
+min_seg_size_forward: 20
+Active Mean: replaced by 0 due to NaN or Inf
+Active Std: 0
+Active Max: replaced by 0 due to NaN or Inf
+Active Min: replaced by 0 due to NaN or Inf
+Idle Std: 0
+Predicted label: 0
+Map 0:
+Class 0: Probability 0.994953
+Class 1: Probability 0.00026651
+Class 2: Probability 0.000271727
+Class 3: Probability 0.000276266
+Class 4: Probability 0.00152141
+Class 5: Probability 0.000273875
+Class 6: Probability 0.00033364
+Class 7: Probability 0.000265949
+Class 8: Probability 0.000265876
+Class 9: Probability 0.000627074
+Class 10: Probability 0.000401337
+Class 11: Probability 0.000265989
+Class 12: Probability 0.000277124
+Destination Port: 80
+Flow Duration: 12606
+Total Fwd Packets: 7
+Total Length of Fwd Packets: 12264
+Fwd Packet Length Max: 4320
+Fwd Packet Length Min: 0
+Fwd Packet Length Mean: 1752
+Bwd Packet Length Max: 165
+Bwd Packet Length Min: 0
+Flow Bytes/s: 985959
+Flow Packets/s: 1507.22
+Flow IAT Mean: 700.333
+Flow IAT Std: 1726.8
+Flow IAT Max: 5552
+Flow IAT Min: 0
+Fwd IAT Mean: 2101
+Fwd IAT Std: 2938.79
+Fwd IAT Min: 6
+Bwd IAT Total: 7014
+Bwd IAT Mean: 637.636
+Bwd IAT Std: 1626.74
+Bwd IAT Max: 5659
+Bwd IAT Min: 0
+Fwd PSH Flags: 0
+Fwd URG Flags: 0
+Fwd Header Length: 160
+Bwd Header Length: 252
+Bwd Packets/s: 951.928
+Min Packet Length: 0
+Max Packet Length: 4320
+Packet Length Mean: 654.158
+Packet Length Variance: 2.2292e+06
+FIN Flag Count: 2
+RST Flag Count: 0
+PSH Flag Count: 4
+ACK Flag Count: 18
+URG Flag Count: 0
+Down/Up Ratio: 1.71429
+Init_Win_bytes_forward: 32120
+Init_Win_bytes_backward: 431
+act_data_pkt_fwd: 2.0487e+12
+min_seg_size_forward: 20
+Active Mean: replaced by 0 due to NaN or Inf
+Active Std: 0
+Active Max: replaced by 0 due to NaN or Inf
+Active Min: replaced by 0 due to NaN or Inf
+Idle Std: 0
+Predicted label: 0
+Map 0:
+Class 0: Probability 0.985202
+Class 1: Probability 4.11513e-05
+Class 2: Probability 4.19569e-05
+Class 3: Probability 4.15317e-05
+Class 4: Probability 0.0141387
+Class 5: Probability 0.000149344
+Class 6: Probability 5.15168e-05
+Class 7: Probability 4.10647e-05
+Class 8: Probability 4.10534e-05
+Class 9: Probability 0.000117339
+Class 10: Probability 5.035e-05
+Class 11: Probability 4.10709e-05
+Class 12: Probability 4.27903e-05
+Destination Port: 80
+Flow Duration: 25839
+Total Fwd Packets: 5
+Total Length of Fwd Packets: 320
+Fwd Packet Length Max: 320
+Fwd Packet Length Min: 0
+Fwd Packet Length Mean: 64
+Bwd Packet Length Max: 335
+Bwd Packet Length Min: 0
+Flow Bytes/s: 25349.3
+Flow Packets/s: 348.311
+Flow IAT Mean: 3229.88
+Flow IAT Std: 4196.75
+Flow IAT Max: 13140
+Flow IAT Min: 18
+Fwd IAT Mean: 5421.5
+Fwd IAT Std: 7057
+Fwd IAT Min: 89
+Bwd IAT Total: 21683
+Bwd IAT Mean: 7227.67
+Bwd IAT Std: 4180.68
+Bwd IAT Max: 13140
+Bwd IAT Min: 4254
+Fwd PSH Flags: 0
+Fwd URG Flags: 0
+Fwd Header Length: 120
+Bwd Header Length: 92
+Bwd Packets/s: 154.805
+Min Packet Length: 0
+Max Packet Length: 335
+Packet Length Mean: 72.7778
+Packet Length Variance: 18550.6
+FIN Flag Count: 2
+RST Flag Count: 0
+PSH Flag Count: 2
+ACK Flag Count: 8
+URG Flag Count: 0
+Down/Up Ratio: 0.8
+Init_Win_bytes_forward: 32120
+Init_Win_bytes_backward: 237
+act_data_pkt_fwd: 2.0487e+12
+min_seg_size_forward: 20
+Active Mean: replaced by 0 due to NaN or Inf
+Active Std: 0
+Active Max: replaced by 0 due to NaN or Inf
+Active Min: replaced by 0 due to NaN or Inf
+Idle Std: 0
+Predicted label: 0
+Map 0:
+Class 0: Probability 0.91249
+Class 1: Probability 0.00399297
+Class 2: Probability 0.00407468
+Class 3: Probability 0.00402609
+Class 4: Probability 0.0265177
+Class 5: Probability 0.00423696
+Class 6: Probability 0.00534544
+Class 7: Probability 0.00398804
+Class 8: Probability 0.00398695
+Class 9: Probability 0.00460992
+Class 10: Probability 0.0163754
+Class 11: Probability 0.00398864
+Class 12: Probability 0.00636738
+Destination Port: 443
+Flow Duration: 383424
+Total Fwd Packets: 115
+Total Length of Fwd Packets: 4.71963e+06
+Fwd Packet Length Max: 64080
+Fwd Packet Length Min: 0
+Fwd Packet Length Mean: 41040.3
+Bwd Packet Length Max: 1991
+Bwd Packet Length Min: 0
+Flow Bytes/s: 1.23195e+07
+Flow Packets/s: 1092.79
+Flow IAT Mean: 917.282
+Flow IAT Std: 10515.8
+Flow IAT Max: 212766
+Flow IAT Min: 0
+Fwd IAT Mean: 3323.47
+Fwd IAT Std: 24053.4
+Fwd IAT Min: 1
+Bwd IAT Total: 378823
+Bwd IAT Mean: 1250.24
+Bwd IAT Std: 12350.3
+Bwd IAT Max: 212766
+Bwd IAT Min: 0
+Fwd PSH Flags: 0
+Fwd URG Flags: 0
+Fwd Header Length: 2320
+Bwd Header Length: 6092
+Bwd Packets/s: 792.856
+Min Packet Length: 0
+Max Packet Length: 64080
+Packet Length Mean: 11273.5
+Packet Length Variance: 5.25727e+08
+FIN Flag Count: 2
+RST Flag Count: 0
+PSH Flag Count: 111
+ACK Flag Count: 418
+URG Flag Count: 0
+Down/Up Ratio: 2.64348
+Init_Win_bytes_forward: 32120
+Init_Win_bytes_backward: 10712
+act_data_pkt_fwd: 2.0487e+12
+min_seg_size_forward: 20
+Active Mean: replaced by 0 due to NaN or Inf
+Active Std: 0
+Active Max: replaced by 0 due to NaN or Inf
+Active Min: replaced by 0 due to NaN or Inf
+Idle Std: 0
+Predicted label: 0
+Map 0:
+Class 0: Probability 0.990733
+Class 1: Probability 0.00278335
+Class 2: Probability 0.000244397
+Class 3: Probability 0.000241996
+Class 4: Probability 0.00375576
+Class 5: Probability 0.000296258
+Class 6: Probability 0.000265475
+Class 7: Probability 0.000239275
+Class 8: Probability 0.000239209
+Class 9: Probability 0.000311624
+Class 10: Probability 0.000401491
+Class 11: Probability 0.000239311
+Class 12: Probability 0.000249344
+Terminating
