@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <cmath>
 #include <string>
 
 class FlowFeature {
@@ -23,9 +24,15 @@ public:
         for (const std::string& featureName : requiredFeatureNamesVec) {
             // Check if the featureName exists in the map
             if (featureMap.find(featureName) != featureMap.end()) {
-                // If exists, add its value to featureValues
-                featureValues.push_back(featureMap[featureName]);
-                // std::cout<<featureName<<": "<<featureMap[featureName]<<std::endl;
+                // Check for NaN and Inf values
+                if (std::isnan(featureMap[featureName]) || std::isinf(featureMap[featureName])) {
+                    featureValues.push_back(0.0); // Replace NaN or Inf with 0
+                    std::cout << featureName << ": " << "replaced by 0 due to NaN or Inf" << std::endl;
+                } else {
+                    // If the value is normal, add it to featureValues
+                    featureValues.push_back(featureMap[featureName]);
+                    std::cout << featureName << ": " << featureMap[featureName] << std::endl;
+                }
             } else {
                 // If not exists, add a placeholder value
                 featureValues.push_back(0.0); // Or any default value you prefer

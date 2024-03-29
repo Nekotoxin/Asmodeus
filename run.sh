@@ -10,4 +10,3 @@ echo "Services started."
 # docker exec -it [name] bash
 # http://172.17.0.2:80
 # slowhttptest -c 1000 -H -g -o my_header_stats -i 10 -r 200 -t GET -u http://172.17.0.2 -x 24 -p 3
-# Super-portscan: python3 main.py -i 172.17.0.2
