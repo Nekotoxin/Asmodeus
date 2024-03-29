@@ -121,8 +121,8 @@ public:
 
 
     void onFlowGenerated(BasicFlow& flow) {
-        std::cout<<"------------------------------------------------------"<<std::endl;
         std::lock_guard<std::mutex> guard(ort_mtx);
+        std::cout<<"------------------------------------------------------"<<std::endl;
         if (!session) return;
 
         // 构造输入Tensor
@@ -143,7 +143,7 @@ public:
             // 处理output_label
             auto& output_label_tensor = output_tensors[0];
             auto output_label = output_label_tensor.GetTensorMutableData<int64_t>();
-            std::cout << "Predicted label: " << *output_label << std::endl;
+            std::cout << "Predicted label: " << flow.flowFeature.pred_labels[*output_label] << std::endl;
 
             // 处理output_probability
             Ort::Value& output_probability_seq = output_tensors[1];
@@ -161,7 +161,7 @@ public:
 
                 std::cout << "Map " << i << ":" << std::endl;
                 for (size_t j = 0; j < keys.GetTensorTypeAndShapeInfo().GetElementCount(); ++j) {
-                    std::cout << "Class " << keys_data[j] << ": Probability " << values_data[j] << std::endl;
+                    std::cout << "Class " << flow.flowFeature.pred_labels[keys_data[j]] << ": Probability " << values_data[j] << std::endl;
                 }
             }
         }
