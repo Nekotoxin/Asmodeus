@@ -27,16 +27,16 @@ public:
                 // Check for NaN and Inf values
                 if (std::isnan(featureMap[featureName]) || std::isinf(featureMap[featureName])) {
                     featureValues.push_back(0.0); // Replace NaN or Inf with 0
-                    std::cout << featureName << ": " << "replaced by 0 due to NaN or Inf" << std::endl;
+                    // std::cout << featureName << ": " << "replaced by 0 due to NaN or Inf" << std::endl;
                 } else {
                     // If the value is normal, add it to featureValues
                     featureValues.push_back(featureMap[featureName]);
-                    std::cout << featureName << ": " << featureMap[featureName] << std::endl;
+                    // std::cout << featureName << ": " << featureMap[featureName] << std::endl;
                 }
             } else {
                 // If not exists, add a placeholder value
                 featureValues.push_back(0.0); // Or any default value you prefer
-                std::cout<<featureName<<": "<<"unexisted"<<std::endl;
+                // std::cout<<featureName<<": "<<"unexisted"<<std::endl;
             }
         }
         return featureValues;
@@ -53,4 +53,6 @@ const std::vector<std::string> FlowFeature::requiredFeatureNamesVec = {
     "Destination Port", "Flow Duration", "Total Fwd Packets", "Total Length of Fwd Packets", "Fwd Packet Length Max", "Fwd Packet Length Min", "Fwd Packet Length Mean", "Bwd Packet Length Max", "Bwd Packet Length Min", "Flow Bytes/s", "Flow Packets/s", "Flow IAT Mean", "Flow IAT Std", "Flow IAT Max", "Flow IAT Min", "Fwd IAT Mean", "Fwd IAT Std", "Fwd IAT Min", "Bwd IAT Total", "Bwd IAT Mean", "Bwd IAT Std", "Bwd IAT Max", "Bwd IAT Min", "Fwd PSH Flags", "Fwd URG Flags", "Fwd Header Length", "Bwd Header Length", "Bwd Packets/s", "Min Packet Length", "Max Packet Length", "Packet Length Mean", "Packet Length Variance", "FIN Flag Count", "RST Flag Count", "PSH Flag Count", "ACK Flag Count", "URG Flag Count", "Down/Up Ratio", "Init_Win_bytes_forward", "Init_Win_bytes_backward", "act_data_pkt_fwd", "min_seg_size_forward", "Active Mean", "Active Std", "Active Max", "Active Min", "Idle Std"
 };
 
-const std::vector<std::string> FlowFeature::pred_labels = {"BENIGN", "Bot", "DDoS", "DoS GoldenEye", "DoS Hulk", "DoS Slowhttptest", "DoS slowloris", "FTP-Patator", "Heartbleed", "Infiltration", "PortScan", "SSH-Patator", "Web Attack"};
+// const std::vector<std::string> FlowFeature::pred_labels = {"BENIGN", "Bot", "DDoS", "DoS GoldenEye", "DoS Hulk", "DoS Slowhttptest", "DoS slowloris", "FTP-Patator", "Heartbleed", "Infiltration", "PortScan", "SSH-Patator", "Web Attack"};
+
+const std::vector<std::string> FlowFeature::pred_labels = {"BENIGN","Dos","PortScan"}; // use model trained using data collected by myself

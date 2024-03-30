@@ -6,6 +6,7 @@
 #include <memory>
 #include "BasicFlow.h"  // Include the definition of BasicFlow
 
+#include <fstream>
 #include <mutex>
 #include "onnxruntime_cxx_api.h"
 
@@ -23,13 +24,18 @@ public:
     int64_t flowTimeOut;
     int64_t flowActivityTimeOut;
 
+    // std::ofstream csvfp;
+    // const std::string CSV_NAME="collect_data/PortScan.csv";
+    // const std::string LABEL="Label";
+    // const std::string ATTACK_TYPE="PortScan";
+
     FlowGenerator(bool bidirectional, int64_t flowTimeout, int64_t activityTimeout)
         : bidirectional(bidirectional), flowTimeOut(flowTimeout), flowActivityTimeOut(activityTimeout) {
         init();
         Ort::Env local_env(ORT_LOGGING_LEVEL_WARNING, "FlowGenerator");
         env = std::move(local_env);
         Ort::SessionOptions session_options;
-        const char* modelPath = "models/xgb_model.onnx";
+        const char* modelPath = "models/xgb_model_mydataset.onnx";
 
         try {
             auto local_session = std::make_unique<Ort::Session>(env, modelPath, session_options);
@@ -39,6 +45,16 @@ public:
         } catch (const std::exception& ex) {
             std::cerr << "An unknown error occurred: " << ex.what() << std::endl;
         }
+
+        // csvfp.open(CSV_NAME, std::ios::out | std::ios::app);
+        // if(!csvfp){
+        //     std::cout<<"file open failed."<<std::endl;
+        //     return;
+        // }
+        //  for(auto featureName:FlowFeature::requiredFeatureNamesVec){
+        //     csvfp<<featureName<<", ";
+        // }
+        // csvfp<<LABEL<<std::endl;
     }
 
     void init() {
@@ -127,6 +143,12 @@ public:
 
         // 构造输入Tensor
         std::vector<float> input_tensor_values = flow.dump(); // 假设这些值已经是适当的浮点数格式
+
+        // for(auto val:input_tensor_values){
+        //     csvfp<<val<<",";
+        // }
+        // csvfp<<ATTACK_TYPE<<std::endl;
+
         std::vector<int64_t> input_tensor_shape = {1, static_cast<int64_t>(input_tensor_values.size())};
         Ort::MemoryInfo memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
         Ort::Value input_tensor = Ort::Value::CreateTensor<float>(memory_info, input_tensor_values.data(), input_tensor_values.size(), input_tensor_shape.data(), input_tensor_shape.size());
@@ -159,7 +181,6 @@ public:
                 auto keys_data = keys.GetTensorData<int64_t>();
                 auto values_data = values.GetTensorData<float>();
 
-                std::cout << "Map " << i << ":" << std::endl;
                 for (size_t j = 0; j < keys.GetTensorTypeAndShapeInfo().GetElementCount(); ++j) {
                     std::cout << "Class " << flow.flowFeature.pred_labels[keys_data[j]] << ": Probability " << values_data[j] << std::endl;
                 }

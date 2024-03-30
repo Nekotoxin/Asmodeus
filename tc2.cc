@@ -157,9 +157,6 @@ unsigned int get_interface_ip(char* if_name) {
     int fd;
     struct ifreq ifr;
     fd = socket(AF_INET, SOCK_DGRAM, 0);
-    /* I want to get an IPv4 IP address */
-    ifr.ifr_addr.sa_family = AF_INET; 
-    /* I want IP address attached to "eth0" */
     strncpy(ifr.ifr_name, if_name, IFNAMSIZ-1);
     ioctl(fd, SIOCGIFADDR, &ifr);
     close(fd); 

@@ -53,6 +53,7 @@ Mkfile.old
 dkms.conf
 
 .output
+logs
 src/11-bootstrap/bootstrap
 /minimal
 /minimal_legacy

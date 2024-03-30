@@ -123,7 +123,7 @@ $(patsubst %,$(OUTPUT)/%.o,$(APPS)): %.o: %.skel.h
 
 $(OUTPUT)/%.o: %.cc $(wildcard %.h) | $(OUTPUT)
 	$(call msg,CXX,$@)
-	$(Q)$(CXX) $(CFLAGS) $(INCLUDES) -c $(filter %.cc,$^) -o $@
+	$(Q)$(CXX) $(CFLAGS) $(INCLUDES) -MMD -MP -c $(filter %.cc,$^) -o $@
 
 $(OUTPUT)/%.o: %.c $(wildcard %.h) | $(OUTPUT)
 	$(call msg,CC,$@)
@@ -143,3 +143,5 @@ $(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ)  | $(OUTPUT)
 
 # keep intermediate (.skel.h, .bpf.o, etc) targets
 .SECONDARY:
+
+-include $(APPS:%=$(OUTPUT)/%.d)
