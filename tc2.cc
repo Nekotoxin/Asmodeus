@@ -67,7 +67,6 @@ int handle_event(void *ctx, void *data, size_t len)
     } else if (e->protocol == 17) { // UDP
         src_port = ntohs(e->transport_info.udp_info.source);
         dst_port = ntohs(e->transport_info.udp_info.dest);
-        if(src_port!=8000&&dst_port!=8000) return 0;
         BasicPacketInfo pkt(src_ip, dst_ip, src_port, dst_port, e->protocol, e->timestamp_ns / 1000000, packet_id_generator);
         unsigned int udp_payload_length = ip_total_length - sizeof(struct iphdr) - sizeof(struct udphdr);
         pkt.setPayloadBytes(udp_payload_length);
