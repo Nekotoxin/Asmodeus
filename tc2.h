@@ -14,6 +14,7 @@ struct event {
         struct tcphdr tcp_info;
         struct udphdr udp_info;
     } transport_info;
+    __u64 padding;
 };
 
 #endif
